@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'includes/head.html' %}
+
+<body class="d-flex flex-column min-vh-100">
+
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/messages.html' %}
+
+    <div class="container mt-5 text-center">
+
+        <h1 class="mb-4">Welcome to MindFort!</h1>
+
+        <p class="lead">
+            MindFort is designed to help you recognize and counter misinformation across a wide range of topics.
+            Strengthen your critical thinking, and expand your knowledge through engaging lessons and discussions.
+        </p>
+
+        <div class="mt-4">
+            <a href="{{ url_for('topics') }}" class="btn btn-primary btn-lg me-3">Get Started</a>
+        </div>
+
+    </div>
+
+    {% include 'includes/footer.html' %}
+</body>
+
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</html>

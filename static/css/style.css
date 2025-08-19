@@ -1,0 +1,154 @@
+:root {
+  /* Base primary color */
+  --bs-primary: #4572C4;
+
+  /* RGB version for components that use rgba() (e.g., shadows, borders) */
+  --bs-primary-rgb: 69, 114, 196;
+
+  /* Override blue utility if used anywhere */
+  --bs-blue: #4572C4;
+
+  /* Link color override */
+  --bs-link-color: #4572C4;
+
+  /* Progress bar */
+  --bs-progress-bar-bg: #4572C4;
+}
+
+
+/* Ensure buttons use your primary color */
+.btn-primary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.btn-primary:hover {
+  background-color: #3b64b1 !important;
+  border-color: #3b64b1 !important;
+}
+
+/* Navbar if using bg-primary */
+.navbar.bg-primary,
+.navbar.navbar-dark.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+/* Progress bar */
+.progress-bar {
+  background-color: #4572C4 !important;
+}
+
+
+body {
+  background-color: #fafdff; /* Light grey background */
+  font-family: "Capriola", sans-serif;
+  font-size: 0.9rem;
+  /* overflow-y: scroll; */
+  /* font-family: "Noto Sans", cursive; */
+  font-weight: 400;
+  font-style: normal;
+  padding-top: 70px;
+  min-height: 100vh;
+}
+
+ h3, h3, h4 {
+  font-size: 0.9rem;
+}
+
+.card {
+  background-color: #ffffff; /* White card background */
+  overflow-y: hidden; /* Hide overflowing content */
+  box-shadow: rgba(0, 0, 0, 0.05) 0 5px 6px;
+}
+
+.card, input {
+  border: rgba(128, 128, 128, 0.25) solid 1px;
+  box-shadow: rgba(0, 0, 0, 0.07) 0 5px 6px;
+}
+
+.disabled, :disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  pointer-events: all !important;
+}
+
+.card-content {
+  max-height: 100%; /* Ensure content takes up the full height of the card */
+}
+
+.navbar .nav-link.active {
+  position: relative;
+}
+
+.navbar .nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 3px; /* Adjust this value to move the dot higher or lower */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  background-color: white;
+  border-radius: 50%;
+}
+
+
+/*#conversation*/
+
+.message {
+  max-width: 70%;
+  margin-bottom: 1em;
+  padding: 10px 15px;
+  border-radius: 15px;
+  clear: both;
+  word-wrap: break-word;
+  font-size: 1rem;
+}
+
+/* Participant (user) */
+.participant {
+  background-color: #007bff;
+  color: white;
+  float: right;
+  border-bottom-right-radius: 0;
+}
+
+/* Default bot */
+.bot {
+  background-color: #e4e6eb;
+  color: #050505;
+  float: left;
+  border-bottom-left-radius: 0;
+}
+
+/* Misinfo bot */
+.misinfo-bot {
+  background-color: #F8CECC;
+  color: #050505;
+  float: left;
+  border-bottom-left-radius: 0;
+}
+
+/* Supportive bot */
+.supportive-bot {
+  background-color: #DAE8FC;
+  color: #050505;
+  float: left;
+  border-bottom-left-radius: 0;
+}
+
+/* Refutational bot */
+.refutational-bot {
+  background-color: #D5E8D4;
+  color: #050505;
+  float: left;
+  border-bottom-left-radius: 0;
+}
+
+/* Prebunking bot */
+.prebunking-bot {
+  background-color: #E1D5E7;
+  color: #050505;
+  float: left;
+  border-bottom-left-radius: 0;
+}

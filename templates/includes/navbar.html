@@ -1,0 +1,37 @@
+<nav class="navbar navbar-expand-sm navbar-dark bg-primary shadow fixed-top">
+    <a class="navbar-brand ms-5 me-5" href="/">
+        <!-- <img src="{{ url_for('static', filename='img/logo.png') }}" height="32px" class="me-4" style="margin-top: -3px;"> -->
+        <strong>MindFort</strong>
+    </a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link {% if current_path == '/' %}active{% endif %}" aria-current="page" href="/">Home</a>
+            </li>
+            <!-- Temporarily remove these options for the experiment -->
+            <!-- <li class="nav-item">
+                <a class="nav-link {% if current_path == '/about' %}active{% endif %}" aria-current="page" href="/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_path == '/terms' %}active{% endif %}" aria-current="page" href="/terms">Terms</a>
+            </li> -->
+        </ul>
+        <ul class="navbar-nav">
+            {% if session['user.id'] is defined %}
+            <li class="nav-item me-5">
+                <a class="nav-link" href="/profile" style="opacity: 100%; color: white;">
+                    <img src="{{ url_for('static', filename='img/person.crop.circle.png') }}" class="mb-1 me-2" width="18">
+                    {% if session['user.first_name'] == "" %}{{ session['user.username'].title() }} {% else %} {{ session['user.first_name'].title()}}{% endif %}
+                </a>
+            </li>
+            {% else %}
+            <li class="nav-item me-5">
+                <a class="btn btn-dark" href="/signin" style="color: white;">
+                    <img src="{{ url_for('static', filename='img/person.crop.circle.png') }}" class="mb-1  me-2" width="18">
+                    Sign in
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>

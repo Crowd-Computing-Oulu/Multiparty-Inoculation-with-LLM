@@ -1,0 +1,42 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div id="flash-messages" class="position-fixed top-3 end-0 p-3" style="z-index: 1050;">
+            {% for category, message in messages %}
+                <div class="toast align-items-center text-bg-{{ category }} border-0 mb-3 show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%;" id="progress-bar-{{ loop.index }}"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const duration = 4000; // Time in milliseconds
+        const toasts = document.querySelectorAll('.toast');
+        
+        toasts.forEach((toast, index) => {
+            // Animate the progress bar
+            const progressBar = document.querySelector(`#progress-bar-${index + 1}`);
+            if (progressBar) {
+                progressBar.style.transition = `width ${duration}ms linear`;
+                progressBar.style.width = '0%';
+            }
+            
+            // Auto-dismiss after the specified duration
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, duration);
+        });
+    });
+</script>

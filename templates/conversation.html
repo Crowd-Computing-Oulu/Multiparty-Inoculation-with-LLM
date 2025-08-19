@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'includes/head.html' %}
+<body>
+{% include 'includes/navbar.html' %}
+
+<div class="container mt-5" style="max-width:600px; margin:auto;">
+
+    {% if finished %}
+        <h1 class="text-center">✅ You’ve finished all conversation modes for this topic!</h1>
+        <p class="text-center mt-3">You have finished all conversations for this topic. Please choose the next topic.</p>
+        <div class="text-center">
+            <a href="/topics" class="btn btn-primary mt-3">Choose Next Topic</a>
+        </div>
+    {% else %}
+        <h1 class="text-center">Conversation ({{ mode|capitalize }})</h1>
+
+        <div id="chat" style="border:1px solid #ccc; height:500px; overflow-y:auto; padding:1rem; background:#fafafa;">
+            {% for line in history %}
+                {% set parts = line.split(":", 1) %}
+                {% set speaker = parts[0].strip() %}
+                {% set msg = parts[1] if parts|length > 1 else '' %}
+
+                {% set speaker_class = '' %}
+                {% if speaker == 'Participant' %}
+                    {% set speaker_class = 'participant' %}
+                {% elif speaker == 'MisInfoBot' %}
+                    {% set speaker_class = 'misinfo-bot' %}
+                {% elif speaker == 'SupportBot' %}
+                    {% set speaker_class = 'supportive-bot' %}
+                {% elif speaker == 'RefutationalBot' %}
+                    {% set speaker_class = 'refutational-bot' %}
+                {% elif speaker == 'PrebunkingBot' %}
+                    {% set speaker_class = 'prebunking-bot' %}
+                {% else %}
+                    {% set speaker_class = 'bot' %}
+                {% endif %}
+
+                <div class="message {{ speaker_class }}">
+                    <strong>{{ speaker }}:</strong> {{ msg.strip() }}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if step < total %}
+            <a href="/next_mode/{{ lesson_id }}" class="btn btn-primary mt-3">Next Mode</a>
+        {% else %}
+            <a href="/next_mode/{{ lesson_id }}" class="btn btn-primary mt-3">Finish</a>
+        {% endif %}
+    {% endif %}
+
+</div>
