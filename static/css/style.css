@@ -15,7 +15,6 @@
   --bs-progress-bar-bg: #4572C4;
 }
 
-
 /* Ensure buttons use your primary color */
 .btn-primary {
   background-color: var(--bs-primary) !important;
