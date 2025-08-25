@@ -4,7 +4,7 @@
 <body>
 {% include 'includes/navbar.html' %}
 
-<div class="container mt-5" style="max-width:600px; margin:auto;">
+<div class="container mt-5" style="max-width:1000px; margin:auto;"> 
 
     {% if finished %}
         <h1 class="text-center">✅ You’ve finished all conversation modes for this topic!</h1>
@@ -15,29 +15,44 @@
     {% else %}
         <h1 class="text-center">Conversation ({{ mode|capitalize }})</h1>
 
+        <!--  CHAT WINDOW -->
         <div id="chat" style="border:1px solid #ccc; height:500px; overflow-y:auto; padding:1rem; background:#fafafa;">
             {% for line in history %}
                 {% set parts = line.split(":", 1) %}
                 {% set speaker = parts[0].strip() %}
-                {% set msg = parts[1] if parts|length > 1 else '' %}
+                {% set msg = (parts[1] if parts|length > 1 else '') %}
 
-                {% set speaker_class = '' %}
                 {% if speaker == 'Participant' %}
+                    {% set speaker = 'User' %}
                     {% set speaker_class = 'participant' %}
+                    {% set speaker_img = '/static/img/participant.png' %}
                 {% elif speaker == 'MisInfoBot' %}
+                    {% set speaker = 'Participant 1' %}
                     {% set speaker_class = 'misinfo-bot' %}
+                    {% set speaker_img = '/static/img/misinfo.png' %}
                 {% elif speaker == 'SupportBot' %}
+                    {% set speaker = 'Participant 2' %}
                     {% set speaker_class = 'supportive-bot' %}
+                    {% set speaker_img = '/static/img/support.png' %}
                 {% elif speaker == 'RefutationalBot' %}
+                    {% set speaker = 'Participant 3' %}
                     {% set speaker_class = 'refutational-bot' %}
+                    {% set speaker_img = '/static/img/refutational.png' %}
                 {% elif speaker == 'PrebunkingBot' %}
+                    {% set speaker = 'Participant 4' %}
                     {% set speaker_class = 'prebunking-bot' %}
+                    {% set speaker_img = '/static/img/prebunking.png' %}
                 {% else %}
                     {% set speaker_class = 'bot' %}
+                    {% set speaker_img = '/static/img/bot.png' %}
                 {% endif %}
 
-                <div class="message {{ speaker_class }}">
-                    <strong>{{ speaker }}:</strong> {{ msg.strip() }}
+                <div class="message d-flex align-items-start mb-3 {{ speaker_class }}">
+                    <img src="{{ speaker_img }}" alt="{{ speaker }}" style="width:40px; height:40px; border-radius:50%; margin-right:10px;">
+                    <div class="msg-text">
+                        <strong class="speaker">{{ speaker }}:</strong>
+                        <span class="body" data-msg="{{ msg|e }}"></span>
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -50,3 +65,96 @@
     {% endif %}
 
 </div>
+
+{% include 'includes/footer.html' %}
+
+
+<script>
+// Map old mention names to new ones
+const mentionMap = {
+    "Participant": "User",
+    "MisInfoBot": "Participant 1",
+    "SupportBot": "Participant 2",
+    "RefutationalBot": "Participant 3",
+    "PrebunkingBot": "Participant 4"
+};
+
+// Render message with mentions highlighted and URLs clickable
+function renderMessage(text) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    let html = esc(text);
+
+    // URLs → clickable
+    html = html.replace(
+        /(https?:\/\/[^\s<>"']*[^\s.,;:!?<>"'])/g,
+        '<a href="$1" target="_blank" rel="noopener">$1</a>'
+    );
+
+    // @mentions → highlight
+    html = html.replace(/(^|[\s])@([A-Za-z0-9_]+)/g, (match, space, name) => {
+        const newName = mentionMap[name] || name;
+        return `${space}<span class="mention">@${newName}</span>`;
+    });
+
+    html = html.replace(/\n/g, "<br>");
+    return html;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const chat = document.getElementById("chat");
+    const messages = Array.from(document.querySelectorAll(".message"));
+    let index = 0;
+
+    function scrollToBottom(el) {
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    function showNextMessage() {
+    if (index >= messages.length) return;
+
+    const msgEl = messages[index];
+    const bodyEl = msgEl.querySelector(".body");
+    const rawText = bodyEl.dataset.msg || "";
+    const isParticipant = msgEl.classList.contains('participant');
+
+    msgEl.style.opacity = 1;
+
+    if (isParticipant) {
+        //  User messages show instantly
+        bodyEl.innerHTML = renderMessage(rawText);
+        scrollToBottom(msgEl);
+        index++;
+        setTimeout(showNextMessage, 1000); // short delay before next message
+    } else {
+        // Bot messages: show typing first
+        const typing = document.createElement('div');
+        typing.className = 'typing-dots';
+        const speakerName = msgEl.querySelector('.speaker').innerText.replace(':','');
+        typing.innerText = `${speakerName} is typing...`;
+        msgEl.querySelector('.msg-text').appendChild(typing);
+
+        // scroll to typing indicator
+        scrollToBottom(typing);
+
+        //  10-second typing delay
+        setTimeout(() => {
+            typing.remove();
+            bodyEl.innerHTML = renderMessage(rawText);
+
+            // scroll to final message
+            scrollToBottom(msgEl);
+
+            index++;
+            setTimeout(showNextMessage, 1000); // short pause before next message
+        }, 10000); // 10 seconds typing
+    }
+}
+
+    messages.forEach(m => m.style.opacity = 0);
+    showNextMessage();
+});
+
+</script>
+
+</body>
+</html>
