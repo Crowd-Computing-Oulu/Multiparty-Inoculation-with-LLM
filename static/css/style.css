@@ -156,10 +156,21 @@ body {
 .message { opacity: 0; transition: opacity 0.5s ease-in; }
 
 .typing-dots {
+    position: absolute;      /* position relative to #chat */
+    bottom: 10px;            /* 10px from the bottom */
+    left: 10px;              /* 10px from the left */
     font-style: italic;
-    color: #888;
-    margin-left: 5px;
+    color: #555;
+    font-size: 0.9rem;
+    z-index: 10;
 }
+
+
+.typing-dots::before {
+    content: "💬 "; /* optional bubble icon before typing */
+    margin-right: 5px;
+}
+
 
 .mention {
     background-color: #fffa65;
@@ -174,10 +185,8 @@ body {
   border-radius: 4px;
 }
 
-.message { 
-    opacity: 0; 
-    transition: opacity 0.5s ease-in; 
-}
+
+.message { opacity: 1; transition: opacity 0.5s ease-in; }
 
 /* Chat container styling */
 #chat {
