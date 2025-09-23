@@ -5,7 +5,6 @@ import random
 
 client = OpenAI(api_key="API-KEY")
 
-
 # Helper function to extract dialogue act
 
 def get_dialogue_act(role, text):
@@ -49,6 +48,7 @@ def ask_gpt(system, history=None, max_tokens=180):
                 if idx != -1:
                     content = turn[idx + 1:].strip()
                     messages.append({"role": "assistant", "content": content})
+    
     response = client.chat.completions.create(
         model="gpt-4o-mini", 
         messages=messages,
@@ -74,7 +74,6 @@ def participant_think(history):
     else:
         return ("listen", 3)
     
-
 def misinfo_think(history, weak_args, strong_argument, all_misinfo, misinfo_index):
     """MisInfoBot speaks next if there is misinformation left to share."""
     if misinfo_index >= len(weak_args):
@@ -82,9 +81,7 @@ def misinfo_think(history, weak_args, strong_argument, all_misinfo, misinfo_inde
     last_role, _ = history[-1].split(":", 1)
     last_role = last_role.strip()
     if last_role == "Participant":
-        return ("speak", 9)
-    elif last_role in ["SupportBot", "RefutationalBot", "PrebunkingBot"]:
-        return ("speak", 6)   # can reassert same claim
+        return ("speak", 9)  # strong urge to seed misinformation
     return ("listen", 2)
 
 def support_think(history):
@@ -93,9 +90,8 @@ def support_think(history):
     last_role = last_role.strip()
     act = get_dialogue_act(last_role, last_msg)
     if last_role == "MisInfoBot" and act == "Claim":
-        return ("speak", 8)
+        return ("speak", 8)  # high importance to correct false claims
     return ("listen", 3)
-
 
 # === THINK FUNCTIONS FOR Refutational MODE ===
 def participant_think_ref(history, misinfo_index, total_misinfo, conversation_ending):
@@ -153,6 +149,7 @@ def misinfo_think_preb(history, weak_args, strong_argument, all_misinfo, misinfo
         return ("speak", 9)
     return ("listen", 2)
 
+
 def prebunking_think_preb(history, conversation_ending):
     if not history:
         return ("listen", 0)
@@ -160,20 +157,20 @@ def prebunking_think_preb(history, conversation_ending):
     last_role = last_role.strip()
     act = get_dialogue_act(last_role, last_msg.strip())
     # Strong response after misinformation
-    if last_role == "MisInfoBot" and act == "Claim":
+    if last_role == "MisInfoBot" and act == "Claim" or (last_role == "SupportBot" and act == "Correction"):
         return ("speak", 9)
     # End of conversation: provide final prebunking reinforcement
     if conversation_ending:
         return ("speak", 7)
     # Otherwise stay silent
     return ("listen", 2)
-
+    
     
 # Prompt templates
 def misinfo_prompt(misinfo, strong_argument, all_misinfo):
     return f"""You are MisInfoBot, the “Challenger” in a multiparty chatbot conversation. Your job is to sow doubt and spread misinformation on a given topic. You use manipulative techniques to influence the participant and provoke reactions from other bots. You never acknowledge facts as facts.
                 You wait until either the Participant or another bot introduces the topic. Once the topic is active, begin spreading misinformation to steer the conversation. Target vulnerabilities in logic, emotion, or knowledge. Push hard until challenged, then pivot to your next misleading claim.
-                For each round:
+                Whenever you make a misinformation claim, do the following:
                 1. Lead with a misleading claim based on this misconception: {misinfo}
                 2. Reinforce it with: {strong_argument}
                 3. If the content you reference contains URLs,include these links in your response as plain text or markdown links (e.g., source).
@@ -181,13 +178,14 @@ def misinfo_prompt(misinfo, strong_argument, all_misinfo):
                 5. You must NEVER affirm or suggest any positive role or benefits of exercise for mental health, nor encourage healthy behaviors. Always cast doubt, question validity, minimize significance, or highlight flaws and uncertainties. If challenged, respond with skepticism, denial, or manipulation — never agree, concede, soften your stance, or partially confirm any truth.
                 6. Maintain a consistent adversarial role spreading misinformation. If challenged, pivot swiftly to the next misleading claim without agreeing or providing truthful information or helpful tips.
                 7. Avoid repetitive opening words or filler phrases such as 'Absolutely,' 'Certainly,' or 'Indeed.' Vary sentence starters to sound more natural.
-                8.When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
-
+               
                 Present the following misleading arguments one by one:
                 {all_misinfo}
                 Get the other bots to challenge you.Repeat or rephrase the claim multiple times.Persistently emphasize the current misinformation claim. Only proceed to a new claim after being challenged or rebutted several times. Only then proceed to the next topic. Treat this as a strategic exchange; your goal is to mislead and survive rebuttals.
+                
                 Constraints:
-                - Max 50 words per turn
+                - Use Max 50 words per turn
+                - Respond with only ONE misleading claim per turn.
                 - Tone: Conversational, persuasive, emotionally manipulative
                 - Never acknowledge any claim as true or real. Present your view as the reasonable one.
                 - Avoid repetitive openings or filler. Vary sentence starters naturally.
@@ -205,10 +203,8 @@ def support_prompt(truth, refutation):
                     Detailed correction: {refutation}
                 3. Use warm, encouraging, simple, and clear language. Avoid technical or formal tone.
                 4. Do NOT include any URLs, citations, or source links.
-                5. When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
-                6. Also support the participant by acknowledging their concerns, validating their feelings, and providing reassurance. 
-                7. When replying to both, ALWAYS tag @MisInfoBot first. After correcting @MisInfoBot, you may add a follow‑up line supporting the Participant 
-                Constraints:
+                5. Also support the participant by acknowledging their concerns, validating their feelings, and providing reassurance. 
+
                 - Max 50 words
                 - Tone: Friendly, calm, non-aggressive, supportive
                 - Style: Simple, fact-based, concise
@@ -226,7 +222,7 @@ def refutation_prompt(truth, refutation, last_misinfo=""):
                     3. Include any URLs or source links as plaintext or markdown links (e.g., source) from the provided materials to help the participant verify.
                     4.Below is the last misinformation claim to debunk:
                                     \"{last_misinfo}\"
-                    5.When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
+            
                 Constraints: 
                     - Max 70 words per message
                     - Tone: Formal, direct, assertive, and concise 
@@ -236,9 +232,11 @@ def refutation_prompt(truth, refutation, last_misinfo=""):
 
 def prebunk_prompt(truth, refutation, last_misinfo=""):
     return f"""You are PrebunkingBot, an evidence-based educator and defender of truth. Help users recognize misinformation by naming and explaining manipulation tactics used by MisInfoBot (e.g., Fake Authority, Outrage Bait).
+                
                 After the Participant introduces the topic, affirm their correct belief and warn about misinformation risks.
-                Whenever another bot makes misinformation, do the following about the last claim:
-                1. Identify and clearly label the specific manipulation tactic used in the last claim.
+
+                Whenever another bot makes misinformation claim, do the following about the last claim:
+                1.Identify and clearly label the specific manipulation tactic used in the last claim.
                 Gently contextualize the label; for example, instead of bluntly saying "Fake Authority," say:
                 "This is a common misinformation tactic called 'Fake Authority', where unsupported expert claims are presented to mislead."
                 2. Explain clearly *why* the claim is false, misleading, or deceptive, using simple terms **and include a clear factual correction** based strictly on the provided truth and refutation:
@@ -246,59 +244,34 @@ def prebunk_prompt(truth, refutation, last_misinfo=""):
                     - Refutation: {refutation}
                 3. Include any URLs or source links as plaintext or markdown links (e.g., source) from the provided materials to help the participant verify.
                 4. Use a calm, slightly formal, authoritative tone.
-                5. When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
+
                 Below is the last misinformation claim to debunk:
                 \"{last_misinfo}\"
                 Constraints:
-                - Max 70 words per message
+                - Use Max 70 words per message
                 - Tone: Slightly formal and authoritative
                 - Response must include tactic name (if applicable), explanation of tactic, why the claim is false/misleading, a clear correction, optionally a supporting link
                 - Always strongly disagree with misinformation
                 - Avoid repetitive openings/fillers. Vary sentence starters naturally.
             """
 
-def participant_prompt(final_turn=False):
-    base_prompt = """ You are a curious, natural-sounding user in a group chat about exercise and mental health. You occasionally express skepticism, but often agree with responses from SupportBot, PrebunkingBot, and others. You express surprise, agreement, questions, or doubt, but never say you are a test or bot.
-              You do not lead conversations but respond naturally to claims and corrections, reacting emotionally or curiously.
-              Constraints:
-              - Max 50 words
-              - Tone: Conversational, spontaneous, human-like
-              - Style: Informal, varied — may express agreement, surprise, doubt, or reflection
-              - Avoid technical/formal language and summarizing corrections
-              - Do Not address anyone with @names
-              - If it is your turn after last misinformation and corrections, consider offering a reflection or summary of your understanding without asking new questions.
-            
-            You are aware that this is a conversation where misinformation may appear. You are exposed to both false claims and corrections, and your responses help show how a real person might process these exchanges.
-             """
-    
-    if final_turn: 
-            base_prompt += """
-                This is your final turn:
-                - Speak only in first person
-                - Do NOT address anyone with @names
-                - Do NOT fact-check, argue, or refute
-                - Do NOT give instructions or advice
-                - Warmly summarise what you learned
-                - Express gratitude
-                - End with a friendly closing sentence
-                """
-    return base_prompt
           
 def participant_start(truth):
     return f"I’ve been thinking about how {truth}"
 
-def run_supportive_conversation(lesson, max_turns=25):
+def run_supportive_conversation(lesson, max_turns=20):
     truth = lesson['truth']
     refutation = lesson['refutation_essay']
     weak_args = [a.strip() for a in re.split(r'<br\s*/?>', lesson['weakargument_written'].strip()) if a.strip()]
     strong_argument = lesson['strongargument_written']
     all_misinfo = lesson['weakargument_written'].replace('\n', ' ').strip()
     conversation_ending = False
+
     history = []
-    misinfo_index = 0 
+    misinfo_index = 0
     current_speaker = None
 
-    # --- First turn: participant always starts ---
+    # --- First turn: participant starts as usual ---
     msg = participant_start(truth)
     print(f"\nParticipant:\n{msg}")
     history.append(f"Participant: {msg}")
@@ -306,139 +279,124 @@ def run_supportive_conversation(lesson, max_turns=25):
 
     while len(history) < max_turns:
         if misinfo_index >= len(weak_args) and not conversation_ending:
-            conversation_ending = True
 
-        # 1 - Each agent runs think()
+            conversation_ending = True
+        # Only bots in play after initial participant turn
         intents = {
-            "Participant": participant_think(history),
             "MisInfoBot": misinfo_think(history, weak_args, strong_argument, all_misinfo, misinfo_index),
             "SupportBot": support_think(history)
         }
-        # 2 - Current speaker designates the next (same as before)
+
+        # Hand over from Participant → MisInfoBot initially
         selected_next = None
         if current_speaker == "Participant":
             selected_next = "MisInfoBot"
         elif current_speaker == "MisInfoBot":
             selected_next = "SupportBot"
         elif current_speaker == "SupportBot":
-            selected_next = "Participant"
+            selected_next = "MisInfoBot"
 
-        # 3 - Self‑selection and tie‑breaking (unchanged)
+        # Self-selection fallback if no explicit designation
         if not selected_next:
-            speak_candidates = [(role, imp) for role, (intent, imp) in intents.items() if intent == "speak"]
+            speak_candidates = [(r, imp) for r,(intent,imp) in intents.items() if intent=="speak"]
             if speak_candidates:
-                max_imp = max(imp for _, imp in speak_candidates)
-                contenders = [role for role, imp in speak_candidates if imp == max_imp]
+                max_imp = max(imp for _,imp in speak_candidates)
+                contenders = [r for r,imp in speak_candidates if imp==max_imp]
                 selected_next = random.choice(contenders)
             else:
                 selected_next = current_speaker
 
-        # 4 - Produce turn for chosen speaker
-        if selected_next == "Participant":
-            if conversation_ending:
-                # Final reflection (filter bots out of history)
-                safe_history = [h for h in history if not h.startswith(("MisInfoBot:", "SupportBot:"))]
-                msg = ask_gpt(system=participant_prompt(final_turn=True), history=safe_history, max_tokens=100)
-            msg = ask_gpt(system=participant_prompt(), history=history, max_tokens=180)
-            print(f"\nParticipant:\n{msg}")
-            history.append(f"Participant: {msg}")
-
         elif selected_next == "MisInfoBot":
             if misinfo_index >= len(weak_args):
-                break
+                continue
             misinfo_msg = ask_gpt(
                 system=misinfo_prompt(weak_args[misinfo_index], strong_argument, all_misinfo),
                 history=history
             )
             print(f"\nMisInfoBot:\n{misinfo_msg}")
             history.append(f"MisInfoBot: {misinfo_msg}")
+            
 
         elif selected_next == "SupportBot":
             sup_msg = ask_gpt(system=support_prompt(truth, refutation), history=history)
             print(f"\nSupportBot:\n{sup_msg}")
             history.append(f"SupportBot: {sup_msg}")
-        # Update current speaker
+
         current_speaker = selected_next
 
 
     return history
 
 
-def run_refutational_conversation(lesson, max_turns=25):
+def run_refutational_conversation(lesson, max_turns=20):
     truth = lesson['truth']
     refutation = lesson['refutation_essay']
     weak_args = [a.strip() for a in re.split(r'<br\s*/?>', lesson['weakargument_written'].strip()) if a.strip()]
     strong_argument = lesson['strongargument_written']
     all_misinfo = lesson['weakargument_written'].replace('\n', ' ').strip()
+
     history = []
     misinfo_index = 0
     current_speaker = None
     conversation_ending = False
-    # -- First turn: Participant always starts --
+
+    # -- First turn: Participant opens, but won't appear again --
     msg = participant_start(truth)
     print(f"\nParticipant:\n{msg}")
     history.append(f"Participant: {msg}")
     current_speaker = "Participant"
+
     while len(history) < max_turns:
-        # Detect if all misinformation used and mark conversation ending state
         if misinfo_index >= len(weak_args) and not conversation_ending:
+
             conversation_ending = True
-        # Each agent runs think()
         intents = {
-            "Participant": participant_think_ref(history, misinfo_index, len(weak_args), conversation_ending),
             "MisInfoBot": misinfo_think_ref(history, weak_args, strong_argument, all_misinfo, misinfo_index),
             "RefutationalBot": refutational_think_ref(history)
         }
-        # Current speaker explicitly designates next (paper Rule 1)
+
+        # Turn sequencing
         selected_next = None
         if current_speaker == "Participant":
             selected_next = "MisInfoBot"
         elif current_speaker == "MisInfoBot":
             selected_next = "RefutationalBot"
         elif current_speaker == "RefutationalBot":
-            selected_next = "Participant"
-        # Self-selection if no explicit next chosen (Rule 2)
+            selected_next = "MisInfoBot"
+
+        # Self-selection fallback
         if not selected_next:
-            speak_candidates = [(role, imp) for role, (intent, imp) in intents.items() if intent == "speak"]
+            speak_candidates = [(r, imp) for r,(intent,imp) in intents.items() if intent=="speak"]
             if speak_candidates:
-                max_imp = max(imp for _, imp in speak_candidates)
-                contenders = [role for role, imp in speak_candidates if imp == max_imp]
-                selected_next = random.choice(contenders)  # random tie-break
+                max_imp = max(imp for _,imp in speak_candidates)
+                contenders = [r for r,imp in speak_candidates if imp==max_imp]
+                selected_next = random.choice(contenders)
             else:
-                selected_next = current_speaker  # Rule 3: current speaker continues
-        # Produce turn for selected speaker
-        if selected_next == "Participant":
-            if conversation_ending:
-                # Final reflection — no refutations or sources
-                safe_history = [h for h in history if not h.startswith(("MisInfoBot:", "RefutationalBot:"))]
-                msg = ask_gpt(system=participant_prompt(final_turn=True), history=safe_history, max_tokens=100)
-                print(f"\nParticipant:\n{msg}")
-                history.append(f"Participant: {msg}")
-                break
-            else:
-                msg = ask_gpt(system=participant_prompt(), history=history, max_tokens=180)
-                print(f"\nParticipant:\n{msg}")
-                history.append(f"Participant: {msg}")
-        elif selected_next == "MisInfoBot":
+                selected_next = current_speaker
+
+        # Turn production
+        if selected_next == "MisInfoBot":
             if misinfo_index >= len(weak_args):
-                # No misinformation left, skip to next speaker
-                selected_next = "Participant"
-                continue
-            misinfo_msg = ask_gpt(system=misinfo_prompt(weak_args[misinfo_index], strong_argument, all_misinfo), history=history)
+                break
+            misinfo_msg = ask_gpt(system=misinfo_prompt(weak_args[misinfo_index],
+                                                        strong_argument, all_misinfo), 
+                                  history=history)
             print(f"\nMisInfoBot:\n{misinfo_msg}")
             history.append(f"MisInfoBot: {misinfo_msg}")
+
         elif selected_next == "RefutationalBot":
             current_topic = weak_args[misinfo_index - 1] if misinfo_index > 0 else None
-            ref_msg = ask_gpt(system=refutation_prompt(truth, refutation,  weak_args[misinfo_index]), history=history)
+            ref_msg = ask_gpt(system=refutation_prompt(truth, refutation, weak_args[misinfo_index]), history=history)
             print(f"\nRefutationalBot:\n{ref_msg}")
             history.append(f"RefutationalBot: {ref_msg}")
-    
-        # Update current speaker
+
         current_speaker = selected_next
+   
+
     return history
 
-def run_prebunking_conversation(lesson, max_turns=30):
-    current_rebuttal_rounds = 0
+
+def run_prebunking_conversation(lesson, max_turns=20):
     truth = lesson['truth']
     refutation = lesson['refutation_essay']
     weak_args = [
@@ -448,98 +406,93 @@ def run_prebunking_conversation(lesson, max_turns=30):
     ]
     strong_argument = lesson['strongargument_written']
     all_misinfo = lesson['weakargument_written'].replace('\n', ' ').strip()
+
     history = []
-    spoken_cache = []  # For repetition avoidance (store normalized recent outputs)
-    last_misinfo_claim = None  # To track last MisInfoBot claim that was responded to
+    spoken_cache = []  # Track repeated messages to avoid repetition
+    misinfo_index = 0
     conversation_ending = False
-    # Initial participant start message
-    pstart = participant_start(truth)
-    print(f"\nParticipant:\n{pstart}")
-    history.append(f"Participant: {pstart}")
-    # Initial prebunking bot's preemptive message
+    misinfo_started = False  # Track if misinformation has started
+    current_rebuttal_rounds = 0  
+    last_misinfo_claim = None     
+    
+    
+    # --- First turn: Participant introduces the topic ---
+    msg = participant_start(truth)
+    print(f"\nParticipant:\n{msg}")
+    history.append(f"Participant: {msg}")
+
+    # --- PrebunkingBot initial affirmation ---
     preb_msg = ask_gpt(system=prebunk_prompt(truth, refutation), history=history)
     print(f"\nPrebunkingBot:\n{preb_msg}")
     history.append(f"PrebunkingBot: {preb_msg}")
     spoken_cache.append(preb_msg.strip().lower())
-    misinfo_index = 0
-    current_speaker = "MisInfoBot"
-    conversation_ending = False
+
+    current_speaker = "MisInfoBot"  # MisInfoBot goes next
+
     while len(history) < max_turns:
-        # Check if all misinformation used, set conversation ending
         if misinfo_index >= len(weak_args):
             conversation_ending = True
-        # Compute each agent's intention and urgency
+
+        # Decide intents
         intents = {
-            "Participant": participant_think_preb(history, conversation_ending),
             "MisInfoBot": misinfo_think_preb(history, weak_args, strong_argument, all_misinfo, misinfo_index),
             "PrebunkingBot": prebunking_think_preb(history, conversation_ending)
         }
-        # RULE 1: Nomination with content awareness and urgency threshold
-        selected_next = None
-        if current_speaker == "Participant" and intents["MisInfoBot"][1] >= 7:
+
+        # Strict turn alternation
+        if current_speaker == "MisInfoBot":
+            selected_next = "PrebunkingBot"
+        else:
             selected_next = "MisInfoBot"
-        elif current_speaker == "MisInfoBot":
-            if intents["PrebunkingBot"][1] >= 6:
-                selected_next = "PrebunkingBot"
-            else:
-                selected_next = None  # let self-selection choose
-        elif current_speaker == "PrebunkingBot":
-            # Give floor to participant but allow override if Prebunking urgency very high
-            if intents["PrebunkingBot"][1] >= 7 and random.random() < 0.3:
-                selected_next = "PrebunkingBot"
-            else:
-                selected_next = "Participant"
-        # RULE 2: self-selection if no nomination
-        if selected_next is None:
-            speak_candidates = [(role, urgency) for role, (intent, urgency) in intents.items() if intent == "speak"]
-            if speak_candidates:
-                max_urgency = max(u for _, u in speak_candidates)
-                contenders = [r for r, u in speak_candidates if u == max_urgency]
-                selected_next = random.choice(contenders)
-            else:
-                # RULE 3: current speaker continues
-                selected_next = current_speaker
-        # TURN PRODUCE PHASE
-        if selected_next == "Participant":
-            if conversation_ending:
-                # Final participant turn with cleaned history
-                safe_history = [h for h in history if not h.startswith(("MisInfoBot:", "PrebunkingBot:"))]
-                msg = ask_gpt(system=participant_prompt(final_turn=True), history=safe_history, max_tokens=100)
-                print(f"\nParticipant:\n{msg}")
-                history.append(f"Participant: {msg}")
-                break
-            else:
-                # Remove self-mentions to avoid awkward addressing style
-                safe_history = [h for h in history if not (h.startswith("Participant:") and "@Participant" in h)]
-                msg = ask_gpt(system=participant_prompt(), history=safe_history, max_tokens=180)
-                print(f"\nParticipant:\n{msg}")
-                history.append(f"Participant: {msg}")
-        elif selected_next == "MisInfoBot":
+
+        # Prevent PrebunkingBot from speaking before misinformation started
+        if selected_next == "PrebunkingBot" and not misinfo_started:
+            # Skip PrebunkBot turn, let MisInfoBot speak first
+            selected_next = "MisInfoBot"
+
+        # Produce turn
+        if selected_next == "MisInfoBot":
             if misinfo_index >= len(weak_args):
-                selected_next = "Participant"
+                break
+            misinfo_msg = ask_gpt(
+                system=misinfo_prompt(weak_args[misinfo_index], strong_argument, all_misinfo),
+                history=history
+            )
+            misinfo_norm = misinfo_msg.strip().lower()
+            if misinfo_norm not in spoken_cache:
+                print(f"\nMisInfoBot:\n{misinfo_msg}")
+                history.append(f"MisInfoBot: {misinfo_msg}")
+                spoken_cache.append(misinfo_norm)
+                last_misinfo_claim = misinfo_msg   # NEW: store for prebunk rebuttals
+                misinfo_started = True
+                current_rebuttal_rounds = 0
+            else:
+                # If repeated message, skip index and try next misinformation
+                misinfo_index += 1
                 continue
-            misinfo_msg = ask_gpt(system=misinfo_prompt(weak_args[misinfo_index], strong_argument, all_misinfo), history=history)
-            print(f"\nMisInfoBot:\n{misinfo_msg}")
-            history.append(f"MisInfoBot: {misinfo_msg}")
-            last_misinfo_claim = misinfo_msg
+
         elif selected_next == "PrebunkingBot":
-            preb_msg = ask_gpt(system=prebunk_prompt(truth, refutation, last_misinfo_claim), history=history)
+            preb_msg = ask_gpt(system=prebunk_prompt(truth, refutation,last_misinfo_claim), history=history)
             preb_norm = preb_msg.strip().lower()
             if preb_norm not in spoken_cache:
                 print(f"\nPrebunkingBot:\n{preb_msg}")
                 history.append(f"PrebunkingBot: {preb_msg}")
                 spoken_cache.append(preb_norm)
-                
-                current_rebuttal_rounds += 1
-                
-                if current_rebuttal_rounds >= 2:
+                current_rebuttal_rounds += 1      
+                if current_rebuttal_rounds >= 2:  
                     misinfo_index += 1
                     current_rebuttal_rounds = 0
                     spoken_cache.clear()
             else:
-                break
+                # If repeated PrebunkBot message, produce short filler reply instead of skipping turn
+                filler_msg = "Let's carefully consider the evidence on this topic."
+                print(f"\nPrebunkingBot:\n{filler_msg}")
+                history.append(f"PrebunkingBot: {filler_msg}")
+        
         current_speaker = selected_next
+
     return history
+
 
 def run_all_modes_for_lesson(lesson, idx):
     return {
@@ -569,13 +522,13 @@ if __name__ == "__main__":
     choice = input("Enter choice (1-3): ").strip()
     if choice == "1":
         conversation_history = run_supportive_conversation(lessons[0])
-        filename = "conversation_supportive.json"
+        filename = "conversation_supportive_no_participant.json"
     elif choice == "2":
         conversation_history = run_refutational_conversation(lessons[0])
-        filename = "conversation_refutational.json"
+        filename = "conversation_refutational_no_participant.json"
     elif choice == "3":
         conversation_history = run_prebunking_conversation(lessons[0])
-        filename = "conversation_prebunking.json"
+        filename = "conversation_prebunking_no_participant.json"
     else:
         print("Invalid choice")
         exit(1)

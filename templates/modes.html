@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'includes/head.html' %}
+<body class="d-flex flex-column min-vh-100">
+{% include 'includes/navbar.html' %}
+{% include 'includes/messages.html' %}
+<div class="container mt-5 text-center">
+    <h1 class="mb-4">Choose a Topic</h1>
+    <p class="lead">Select one of the topics below to start learning and challenging misinformation.</p>
+    <div class="row text-center mt-5">
+
+        <!-- Binge Drinking 1 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/0" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 1</h5>
+                    <p class="list-group-item">
+                        A supportive style conversation about binge drinking.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Binge Drinking 2 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/1" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 2</h5>
+                    <p class="list-group-item">
+                        A refutational style conversation that challenges misinformation.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Binge Drinking 3 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/2" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 3</h5>
+                    <p class="list-group-item">
+                        A prebunking style conversation to build resilience against misinformation.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Binge Drinking 4 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/3" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 4</h5>
+                    <p class="list-group-item">
+                        Learn about binge drinking, risks, and common myths.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Binge Drinking 5 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/4" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 5</h5>
+                    <p class="list-group-item">
+                        Learn about binge drinking, risks, and common myths.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Binge Drinking 6 -->
+        <div class="col-md-4 mb-4">
+            <div class="list-group">
+                <a href="/conversation/5" class="list-group text-decoration-none">
+                    <img src="{{ url_for('static', filename='img/drinking.png') }}"
+                         class="img-fluid mb-3 d-block mx-auto"
+                         style="max-height: 100px;" alt="Binge Drinking">
+                    <h5>Binge Drinking 6</h5>
+                    <p class="list-group-item">
+                        Learn about binge drinking, risks, and common myths.
+                    </p>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% include 'includes/footer.html' %}
+</body>
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</html>

@@ -7,10 +7,10 @@
 <div class="container mt-5" style="max-width:1200px; margin:auto;"> 
 
     {% if finished %}
-        <h1 class="text-center">✅ You’ve finished all conversation modes for this topic!</h1>
-        <p class="text-center mt-3">You have finished all conversations for this topic. Please choose the next topic.</p>
+        <h1 class="text-center">✅ You’ve finished the conversation for this topic!</h1>
+        <p class="text-center mt-3">You have finished the conversation for this topic.</p>
         <div class="text-center">
-            <a href="/topics" class="btn btn-primary mt-3">Choose Next Topic</a>
+            <a href="/modes" class="btn btn-primary mt-3">Choose Next Mode</a>
         </div>
     {% else %}
         <h1 class="text-center">Conversation ({{ mode|capitalize }})</h1>
@@ -29,11 +29,9 @@
             visibility: hidden;
         "></div>
 
-        {% if step < total %}
-            <a href="/next_mode/{{ lesson_id }}" class="btn btn-primary mt-3">Next Mode</a>
-        {% else %}
-            <a href="/next_mode/{{ lesson_id }}" class="btn btn-primary mt-3">Finish</a>
-        {% endif %}
+        <div class="text-center mt-3" id="finish-button" style="display:none;">
+            <a href="/finish" class="btn btn-primary">Finish</a>
+        </div>
     {% endif %}
 
 </div>
@@ -103,9 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function scrollToBottom(el) {
         el.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-
+    
     function showNextMessage() {
-        if (index >= chatHistory.length) return;
+        if (index >= chatHistory.length) {
+            document.getElementById("finish-button").style.display = "block";
+            return;
+        }
 
         const line = chatHistory[index];
         const colonIndex = line.indexOf(":");
@@ -146,10 +147,18 @@ document.addEventListener("DOMContentLoaded", () => {
             typingEl.style.visibility = "visible";
             scrollToBottom(typingEl);
 
-            setTimeout(appendBubble, 10000); // bot messages delayed
+            setTimeout(appendBubble, 100); // bot messages delayed
         }
     }
-
+    const finishBtn = document.getElementById('finish-btn');
+    if (finishBtn) {
+        finishBtn.addEventListener('click', () => {
+            document.getElementById('chat').style.display = 'none';
+            document.getElementById('typing-indicator').style.display = 'none';
+            finishBtn.style.display = 'none';
+            document.getElementById('finished-message').style.display = 'block';
+        });
+    }
     showNextMessage();
 });
 </script>
