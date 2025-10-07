@@ -13,17 +13,32 @@
         <h1 class="mb-4">Welcome to MindFort!</h1>
 
         <p class="lead">
-            MindFort is designed to help you recognize and counter misinformation across a wide range of topics.
-            Strengthen your critical thinking, and expand your knowledge through engaging lessons and discussions.
+            MindFort is designed to help you recognize and counter misinformation.
+            Strengthen your critical thinking and expand your knowledge through engaging conversation.
+        </p>
+
+        <hr class="my-4">
+
+        <p class="text-start" style="max-width:800px; margin: 0 auto; font-size: 1.1rem;">
+    
+            When you click the "Get Started" button, you will enter a simulated conversation between a <strong>conversant </strong>and <strong>two bots</strong>.
+            One of them is <strong>Marty</strong>, a bot that spreads misinformation. The other is <strong>Forty</strong>, a fact-checking and debugging bot that takes on one of three possible roles:
+            <br><br>
+            <ul class="text-start" style="max-width:700px; margin: 0 auto;">
+                <li><strong>Supportive:</strong> Gently corrects misinformation and encourages trust in evidence-based information.</li>
+                <li><strong>Refutational:</strong> Clearly and directly debunks false claims using facts, logic, and evidence. </li>
+                <li><strong>Prebunking:</strong> Identifies misinformation techniques in advance and during the conversation. Also explains why misinformation is misleading or false. </li>
+            </ul>
+            <br><br>
+            <strong>Your task is to follow the conversation closely. At the end, you will be asked to identify which Forty's role and reflect on the conversation.</strong>
         </p>
 
         <div class="mt-4">
-            <a href="{{ url_for('topics') }}" class="btn btn-primary btn-lg me-3">Get Started</a>
+            <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg me-3">Get Started</a>
         </div>
 
     </div>
 
-    
 </body>
 
 {% include 'includes/footer.html' %}

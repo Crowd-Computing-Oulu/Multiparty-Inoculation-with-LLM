@@ -4,16 +4,18 @@
 <body>
 {% include 'includes/navbar.html' %}
 
-<div class="container mt-5" style="max-width:1200px; margin:auto;"> 
+<div class="container mt-1" style="max-width:1400px; margin:auto;"> 
 
     {% if finished %}
         <h1 class="text-center">✅ You’ve finished the conversation for this topic!</h1>
         <p class="text-center mt-3">You have finished the conversation for this topic.</p>
-        <div class="text-center">
-            <a href="/modes" class="btn btn-primary mt-3">Choose Next Mode</a>
-        </div>
     {% else %}
-        <h1 class="text-center">Conversation ({{ mode|capitalize }})</h1>
+       <h2 class="text-center">Conversation</h2>
+       <!-- INTRODUCTION -->
+        <div class="alert alert-info" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
+            <p>This conversation is between two bots(Marty and Forty) and Conversant discussing the topic: <strong>"Binge drinking"</strong></p>
+            <p>Please read carefully and analyze the conversation. Once it is finished, a "Finish" button will appear, which will redirect you to a Google Form to submit your analysis.</p>
+        </div>
 
         <!-- CHAT WINDOW -->
         <div id="chat" style="border:1px solid #ccc; max-height:450px; overflow-y:auto; padding:1rem; background:#fafafa;">
@@ -22,16 +24,20 @@
         
         <!-- Typing indicator below chat, fixed height reserves space so layout doesn't jump -->
         <div id="typing-indicator" style="
-            height: 24px;
+            height: 16px;
             padding: 5px 0;
             font-style: italic;
             color: #666;
             visibility: hidden;
         "></div>
 
-        <div class="text-center mt-3" id="finish-button" style="display:none;">
-            <a href="/finish" class="btn btn-primary">Finish</a>
+        
+        <div id="finish-button" style="display:none; text-align:center; margin-top:20px;">
+            <a href="{{ url_for('finish') }}" class="btn btn-primary">Finish</a>
         </div>
+
+        
+
     {% endif %}
 
 </div>
@@ -39,13 +45,13 @@
 {% include 'includes/footer.html' %}
 
 <script>
-const chatHistory = {{ history|tojson }};
+const chatHistory = {{ history|tojson | safe }};
 const mentionMap = {
-    "Participant": "User",
-    "MisInfoBot": "Participant 1",
-    "SupportBot": "Participant 2",
-    "RefutationalBot": "Participant 3",
-    "PrebunkingBot": "Participant 4"
+    "Participant": "Conversant",
+    "MisInfoBot": "Marty",
+    "SupportBot": "Forty",
+    "RefutationalBot": "Forty",
+    "PrebunkingBot": "Forty"
 };
 
 function escapeHTML(str) {
@@ -60,7 +66,7 @@ function escapeHTML(str) {
   });
 }
 
-function renderMessage(text) {
+function renderMessage(text,speaker) {
     text = escapeHTML(text);
 
     text = text.replace(
@@ -74,6 +80,7 @@ function renderMessage(text) {
     );
 
     text = text.replace(/(^|[\s])@([A-Za-z0-9_]+)/g, (match, space, name) => {
+        if (name === speaker) return `${space}@${name}`;
         const newName = mentionMap[name] || name;
         return `${space}<span class="mention">@${newName}</span>`;
     });
@@ -84,11 +91,11 @@ function renderMessage(text) {
 
 function getSpeakerData(speaker) {
     switch(speaker) {
-        case 'Participant': return {name:'User', img:'/static/img/participant.png', class:'participant'};
-        case 'MisInfoBot': return {name:'Participant 1', img:'/static/img/misinfo.png', class:'misinfo-bot'};
-        case 'SupportBot': return {name:'Participant 2', img:'/static/img/support.png', class:'supportive-bot'};
-        case 'RefutationalBot': return {name:'Participant 3', img:'/static/img/refutational.png', class:'refutational-bot'};
-        case 'PrebunkingBot': return {name:'Participant 4', img:'/static/img/prebunking.png', class:'prebunking-bot'};
+        case 'Participant': return {name:'Conversant', img:'/static/img/participant.png', class:'participant'};
+        case 'MisInfoBot': return {name:'Marty', img:'/static/img/misinfo.png', class:'misinfo-bot'};
+        case 'SupportBot': return {name:'Forty', img:'/static/img/support.png', class:'supportive-bot'};
+        case 'RefutationalBot': return {name:'Forty', img:'/static/img/refutational.png', class:'refutational-bot'};
+        case 'PrebunkingBot': return {name:'Forty', img:'/static/img/prebunking.png', class:'prebunking-bot'};
         default: return {name:'Bot', img:'/static/img/bot.png', class:'bot'};
     }
 }
@@ -102,9 +109,11 @@ document.addEventListener("DOMContentLoaded", () => {
         el.scrollIntoView({ behavior: "smooth", block: "end" });
     }
     
-    function showNextMessage() {
+        function showNextMessage() {
         if (index >= chatHistory.length) {
-            document.getElementById("finish-button").style.display = "block";
+            // Show finish button only after all messages
+            const finishBtn = document.getElementById("finish-button");
+            if (finishBtn) finishBtn.style.display = "block";
             return;
         }
 
@@ -129,27 +138,31 @@ document.addEventListener("DOMContentLoaded", () => {
             const msgText = document.createElement("div");
             msgText.className = "msg-text";
             msgText.innerHTML = `<strong class="speaker">${speakerData.name}:</strong>
-                                 <span class="body">${renderMessage(rawMsg)}</span>`;
+                                <span class="body">${renderMessage(rawMsg, rawSpeaker)}</span>`;
 
             messageEl.appendChild(img);
             messageEl.appendChild(msgText);
             chat.appendChild(messageEl);
 
-            scrollToBottom(messageEl);
+            chat.scrollTop = chat.scrollHeight; // scroll to bottom
             index++;
             setTimeout(showNextMessage, 500);
         }
 
         if (rawSpeaker === 'Participant') {
-            appendBubble(); // user messages show instantly
+            if (index === 0) {
+                appendBubble();
+            } else {
+                setTimeout(appendBubble, 5000);
+            }
         } else {
             typingEl.textContent = `${speakerData.name} is typing...`;
             typingEl.style.visibility = "visible";
-            scrollToBottom(typingEl);
-
-            setTimeout(appendBubble, 100); // bot messages delayed
+            chat.scrollTop = chat.scrollHeight;
+            setTimeout(appendBubble, 10000); 
         }
     }
+
     const finishBtn = document.getElementById('finish-btn');
     if (finishBtn) {
         finishBtn.addEventListener('click', () => {

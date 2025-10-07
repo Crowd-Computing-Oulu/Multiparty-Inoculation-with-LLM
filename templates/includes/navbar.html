@@ -24,13 +24,13 @@
                     {% if session['user.first_name'] == "" %}{{ session['user.username'].title() }} {% else %} {{ session['user.first_name'].title()}}{% endif %}
                 </a>
             </li>
-            {% else %}
-            <li class="nav-item me-5">
+            {# {% else %}
+           <li class="nav-item me-5">
                 <a class="btn btn-dark" href="/signin" style="color: white;">
                     <img src="{{ url_for('static', filename='img/person.crop.circle.png') }}" class="mb-1  me-2" width="18">
                     Sign in
-                </a>
-            </li>
+                </a> 
+            </li> #}
             {% endif %}
         </ul>
     </div>

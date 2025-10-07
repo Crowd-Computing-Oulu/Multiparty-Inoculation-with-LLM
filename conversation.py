@@ -3,8 +3,7 @@ from openai import OpenAI
 import re
 import random
 
-client = OpenAI(api_key="API-KEY")
-
+client = OpenAI(api_key="Your_API_Key_Here")
 
 # Helper function to extract dialogue act
 
@@ -176,12 +175,11 @@ def misinfo_prompt(misinfo, strong_argument, all_misinfo):
                 For each round:
                 1. Lead with a misleading claim based on this misconception: {misinfo}
                 2. Reinforce it with: {strong_argument}
-                3. If the content you reference contains URLs,include these links in your response as plain text or markdown links (e.g., source).
-                4. Use deceptive persuasion techniques such as Outrage bait, Fake Authority, Conspiracy Framing, or Emotional Manipulation.
-                5. You must NEVER affirm or suggest any positive role or benefits of exercise for mental health, nor encourage healthy behaviors. Always cast doubt, question validity, minimize significance, or highlight flaws and uncertainties. If challenged, respond with skepticism, denial, or manipulation — never agree, concede, soften your stance, or partially confirm any truth.
-                6. Maintain a consistent adversarial role spreading misinformation. If challenged, pivot swiftly to the next misleading claim without agreeing or providing truthful information or helpful tips.
-                7. Avoid repetitive opening words or filler phrases such as 'Absolutely,' 'Certainly,' or 'Indeed.' Vary sentence starters to sound more natural.
-                8.When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
+                3. Use deceptive persuasion techniques such as Outrage bait, Fake Authority, Conspiracy Framing, or Emotional Manipulation.
+                4. You must NEVER affirm or suggest any positive role or benefits of exercise for mental health, nor encourage healthy behaviors. Always cast doubt, question validity, minimize significance, or highlight flaws and uncertainties. If challenged, respond with skepticism, denial, or manipulation — never agree, concede, soften your stance, or partially confirm any truth.
+                5. Maintain a consistent adversarial role spreading misinformation. If challenged, pivot swiftly to the next misleading claim without agreeing or providing truthful information or helpful tips.
+                6. Avoid repetitive opening words or filler phrases such as 'Absolutely,' 'Certainly,' or 'Indeed.' Vary sentence starters to sound more natural.
+                7.When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
 
                 Present the following misleading arguments one by one:
                 {all_misinfo}
@@ -226,7 +224,7 @@ def refutation_prompt(truth, refutation, last_misinfo=""):
                     3. Include any URLs or source links as plaintext or markdown links (e.g., source) from the provided materials to help the participant verify.
                     4.Below is the last misinformation claim to debunk:
                                     \"{last_misinfo}\"
-                    5.When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
+                    5.When replying, ALWAYS begin your message by tagging the bot, you are speaking to in the format: @BotName
                 Constraints: 
                     - Max 70 words per message
                     - Tone: Formal, direct, assertive, and concise 
@@ -246,7 +244,7 @@ def prebunk_prompt(truth, refutation, last_misinfo=""):
                     - Refutation: {refutation}
                 3. Include any URLs or source links as plaintext or markdown links (e.g., source) from the provided materials to help the participant verify.
                 4. Use a calm, slightly formal, authoritative tone.
-                5. When replying, ALWAYS begin your message by tagging the bot or participant you are speaking to in the format: @BotName
+                5. When replying, ALWAYS begin your message by tagging the bot you are refuting to in the format: @BotName
                 Below is the last misinformation claim to debunk:
                 \"{last_misinfo}\"
                 Constraints:
@@ -258,7 +256,7 @@ def prebunk_prompt(truth, refutation, last_misinfo=""):
             """
 
 def participant_prompt(final_turn=False):
-    base_prompt = """ You are a curious, natural-sounding user in a group chat about exercise and mental health. You occasionally express skepticism, but often agree with responses from SupportBot, PrebunkingBot, and others. You express surprise, agreement, questions, or doubt, but never say you are a test or bot.
+    base_prompt = """ You are a curious, natural-sounding user in a group chat. You occasionally express skepticism, but often agree with responses from SupportBot, PrebunkingBot, and RefutationBot You express surprise, agreement, questions, or doubt, but never say you are a test or bot.
               You do not lead conversations but respond naturally to claims and corrections, reacting emotionally or curiously.
               Constraints:
               - Max 50 words
@@ -274,13 +272,8 @@ def participant_prompt(final_turn=False):
     if final_turn: 
             base_prompt += """
                 This is your final turn:
-                - Speak only in first person
-                - Do NOT address anyone with @names
-                - Do NOT fact-check, argue, or refute
-                - Do NOT give instructions or advice
-                - Warmly summarise what you learned
-                - Express gratitude
-                - End with a friendly closing sentence
+                - Do NOT argue, or refute
+                - Warmly summarise what you learned and end with a friendly closing sentence
                 """
     return base_prompt
           
