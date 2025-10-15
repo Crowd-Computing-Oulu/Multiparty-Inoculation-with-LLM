@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8089:5000"
+    volumes:
+      - ./database.db:/app/database.db
