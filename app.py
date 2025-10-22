@@ -110,14 +110,14 @@ def assign_condition():
             # Condition balancing (count only completed participants)
             condition_counts = {
                 c: conn.execute(
-                    "SELECT COUNT(*) FROM participants WHERE condition = ? AND status = 'completed'", (c,)
+                    "SELECT COUNT(*) FROM participants WHERE condition = ?", (c,)
                 ).fetchone()[0]
                 for c in CONDITIONS
             }
             condition = min(condition_counts, key=condition_counts.get)
             convo_counts = {
                 i: conn.execute(
-                    "SELECT COUNT(*) FROM participants WHERE condition = ? AND conversation_index = ? AND status = 'completed'",
+                    "SELECT COUNT(*) FROM participants WHERE condition = ? AND conversation_index = ?",
                     (condition, i)
                 ).fetchone()[0]
                 for i in [1, 2, 3]
@@ -177,18 +177,15 @@ def finish():
     if prolific_pid:
         conn = get_db_connection()
         conn.execute(
-            "UPDATE participants SET status = 'completed' WHERE prolific_pid = ?",
-            (prolific_pid,)
+            "UPDATE participants SET status = ? WHERE prolific_pid = ? and participant_number = ?",
+            ("completed",prolific_pid, participant_number) 
         )
         conn.commit()
         conn.close()
-        app.logger.info(f"🏁 Participant {participant_number} marked as completed.")
 
-    google_form_url = (
-        "https://docs.google.com/forms/d/e/1FAIpQLScefwvGMj5rAerAB-mho8mA7hQHxsOKkqzEVlCUSWSL1bstdg/"
-        f"viewform?usp=pp_url&entry.1054632790={participant_number}"
-    )
-    return redirect(google_form_url)
+    session['finished'] = True
+    return '', 200 
+
 
 
 # --------------------------

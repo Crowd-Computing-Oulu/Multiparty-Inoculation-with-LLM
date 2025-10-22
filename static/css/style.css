@@ -214,3 +214,8 @@ body {
         font-size: 0.9rem; 
     }
 }
+
+#fill-form-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

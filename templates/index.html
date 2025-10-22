@@ -19,22 +19,57 @@
 
         <hr class="my-4">
 
-        <p class="text-start" style="max-width:800px; margin: 0 auto; font-size: 1.1rem;">
+        <p class="text-start" style="max-width:1200px; margin: 0 auto; font-size: 1.1rem;">
     
-            When you click the "Get Started" button, you will enter a simulated conversation between a <strong>conversant </strong>and <strong>two bots</strong>.
-            One of them is <strong>Marty</strong>, a bot that spreads misinformation. The other is <strong>Forty</strong>, The other is Forty that adopts one of three possible roles:
+            When you click the "Get Started" button below, you will enter a simulated conversation between a <strong>conversant </strong>and <strong>two bots</strong>.
+            One of them is <strong>Marty</strong>, a bot that spreads misinformation. The other is <strong>Forty</strong>, that adopts one of three possible roles below:
             <br><br>
-            <ul class="text-start" style="max-width:700px; margin: 0 auto;">
-                <li><strong>Supportive:</strong> Gently corrects misinformation and encourages trust in evidence-based information.</li>
-                <li><strong>Refutational:</strong> Clearly and directly debunks false claims using facts, logic, and evidence. </li>
-                <li><strong>Prebunking:</strong> Identifies misinformation techniques in advance and during the conversation. Also explains why misinformation is misleading or false. </li>
-            </ul>
+            <div class="container text-center mt-1">
+                <div class="row justify-content-center shadow-sm p-2 rounded" style="background-color: #ffffff;">
+                    
+                    <div class="col-md-4 mb-4">
+                        <img src="{{ url_for('static', filename='img/support.png') }}" 
+                        
+                            alt="Supportive Bot" 
+                            class="rounded mb-3 img-fluid"
+                            style="max-width: 200px; height: auto;">
+                        <div>
+                            <strong>Supportive:</strong> Supports the conversant’s original opinion and encourages them
+                            to trust reliable information.
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <img src="{{ url_for('static', filename='img/refute.png') }}" 
+                            alt="Refutational Bot" 
+                            class="rounded mb-3 img-fluid"
+                            style="max-width: 200px; height: auto;">
+                        <div>
+                            <strong>Refutational:</strong> Responds to false claims by correcting them using clear facts,
+                            evidence and logical explanations.
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <img src="{{ url_for('static', filename='img/prebunk.png') }}" 
+                            alt="Prebunking Bot" 
+                            class="rounded mb-3 img-fluid"
+                            style="max-width: 200px; height: auto;">
+                        <div>
+                            <strong>Prebunking:</strong> Warns and educates the conversant before misinformation appears, identifies
+                            the misinformation technique used by Marty, and explains why the claim is misleading or false.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
             <br><br>
-            <strong>Your task is to follow the conversation closely. At the end, you will be asked to identify which Forty's role and reflect on the conversation.</strong>
+            <strong>Your task is to follow the conversation closely. At the end, you will be asked to identify Forty's role and reflect on the conversation.</strong>
         </p>
 
         <div class="mt-4">
-            <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg me-3">Get Started</a>
+            <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg me-3" style="margin-bottom: 30px;">Get Started</a>
         </div>
 
     </div>

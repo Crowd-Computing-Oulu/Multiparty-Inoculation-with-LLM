@@ -4,41 +4,78 @@
 <body>
 {% include 'includes/navbar.html' %}
 
-<div class="container mt-1" style="max-width:1400px; margin:auto;"> 
+<div class="container mt-1" style="max-width:1400px; margin:auto;;">
 
-    {% if finished %}
-        <h1 class="text-center">✅ You’ve finished the conversation for this topic!</h1>
-        <p class="text-center mt-3">You have finished the conversation for this topic.</p>
-    {% else %}
-       <h2 class="text-center">Conversation</h2>
-       <!-- INTRODUCTION -->
-        <div class="alert alert-info" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
-            <p>This conversation is between two bots(Marty and Forty) and Conversant discussing the topic: <strong>"Binge drinking"</strong></p>
-            <p>Please read carefully and analyze the conversation. Once it is finished, a "Finish" button will appear, which will redirect you to a Google Form to submit your analysis.</p>
+        <div class="text-center"><h1>Conversation</h1></div>
+
+        <div class="alert alert-info" style="font-size: 1rem; padding: 0.3rem 0.6rem;">
+            <p>This conversation is between two bots (Marty and Forty) and Conversant discussing the topic: "Binge drinking"</strong>.</p>
+
+            <p>Please read the conversation carefully and analyze it.</p>
+            <ol>
+                <li class="mb-1">When the conversation ends, <strong>“Fill the form”</strong> button will be enabled.</li>
+                <li class="mb-1">Click the <strong>“Fill the form”</strong> button to open the Google Form and submit your analysis.</li>
+                <li class="mb-1"> After submitting the Google Form, you will receive a <strong>completion code</strong>.</li>
+                <li class="mb-1">Enter the completion code on Prolific to complete the task. </li>
+            </ol>
+        </div>
+        <!-- Fill Form button (shown after chat ends) -->
+            <div id="fill-form-button" style="text-align:center; margin:20px;">
+                <button id="fill-form-btn" class="btn btn-primary" onclick="showGoogleForm()" disabled>
+                    Fill the Form
+                </button>
+            </div>
+
+       <div style="display: flex; gap: 20px; max-width: 1200px; margin: auto; margin-bottom: 30px; height: 75vh; min-height: 600px;">
+            
+
+            <!-- Chat container -->
+            <div class="card" id="chat" style="flex: 1; display: flex; flex-direction: column;  min-height:600px;">
+
+                <div class="card-header d-flex flex-column p-1 justify-content-between">
+                    <div class="d-flex w-100 align-items-center justify-content-between">
+                        <p class="mb-0" style="font-weight: bold"><strong>Binge Drinking Chat</strong></p>
+                    </div>
+                    <div id="typing-indicator" style="font-style: italic; color: #010a06; font-size: 0.96em; min-height: 22px; padding-left:4px;"></div>
+                </div>
+
+                <div class="card-body overflow-y-scroll flex-grow-1" id="chat-messages" style="padding: 1rem; background:#fafafa; min-height:0;">
+                </div>
+
+                <div class="card-footer d-flex p-1" style="gap:0.6rem;">
+                    <input type="text" id="msgInput" class="form-control no-interact" placeholder="" autocomplete="off" />
+                    <button id="sendButton" class="btn btn-primary no-interact" type="button">
+                        <img src="/static/img/paperplane.fill.png" width="24" alt="Send" style="margin-bottom: 2px;">
+                    </button>
+                </div>
+            </div>
+
+            <!-- Google Form container -->
+            <div id="google-form-container" style="flex: 1; display: none; flex-direction: column; border: 1px solid #ddd; border-radius:4px; min-height:0;">
+                <div class="card-header p-2" style="flex:0 0 auto;">
+                    <h3 class="mb-0">Please fill out the form below:</h3>
+                </div>
+                <div class="card-body flex-grow-1" style="overflow:hidden; display:flex; flex-direction:column; min-height:0;">
+                    <iframe id="google-form"
+                        src="https://docs.google.com/forms/d/e/1FAIpQLScefwvGMj5rAerAB-mho8mA7hQHxsOKkqzEVlCUSWSL1bstdg/viewform?usp=pp_url&entry.1054632790={{ participant_number }}&embedded=true"
+                        style="flex:1; width:100%; border:none; min-height:0;">
+                    </iframe>
+                </div>
+            </div>
+
+
         </div>
 
-        <!-- CHAT WINDOW -->
-        <div id="chat" style="border:1px solid #ccc; max-height:450px; overflow-y:auto; padding:1rem; background:#fafafa;">
-            <!-- messages inserted dynamically -->
-        </div>
-        
-        <!-- Typing indicator below chat, fixed height reserves space so layout doesn't jump -->
-        <div id="typing-indicator" style="
-            height: 16px;
-            padding: 5px 0;
-            font-style: italic;
-            color: #666;
-            visibility: hidden;
-        "></div>
 
         
-        <div id="finish-button" style="display:none; text-align:center; margin-top:20px;">
-            <a href="{{ url_for('finish') }}" class="btn btn-primary">Finish</a>
+
+
+        <!-- Finish button (shown after form is visible) -->
+        <div id="finish-button" style="display:none; text-align:center; margin:20px;">
+            <button class="btn btn-success" onclick="finishParticipant()">Finish</button>
         </div>
 
         
-
-    {% endif %}
 
 </div>
 
@@ -55,7 +92,7 @@ const mentionMap = {
 };
 
 function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, function(m) {
+  return str.replace(/[&<>"']/g, m => {
     switch (m) {
       case '&': return '&amp;';
       case '<': return '&lt;';
@@ -68,52 +105,113 @@ function escapeHTML(str) {
 
 function renderMessage(text,speaker) {
     text = escapeHTML(text);
-
-    text = text.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener">$1</a>'
-    );
-
-    text = text.replace(
-        /(https?:\/\/[^\s<>"']+)(?![^<]*<\/a>)/g,
-        '<a href="$1" target="_blank" rel="noopener">$1</a>'
-    );
-
+    text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    text = text.replace(/(https?:\/\/[^\s<>"']+)(?![^<]*<\/a>)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
     text = text.replace(/(^|[\s])@([A-Za-z0-9_]+)/g, (match, space, name) => {
-        if (name === speaker) return `${space}@${name}`;
+        if(name === speaker) return `${space}@${name}`;
         const newName = mentionMap[name] || name;
         return `${space}<span class="mention">@${newName}</span>`;
     });
-
     text = text.replace(/\n/g, "<br>");
     return text;
 }
 
 function getSpeakerData(speaker) {
     switch(speaker) {
-        case 'Participant': return {name:'Conversant', img:'/static/img/participant.png', class:'participant'};
-        case 'MisInfoBot': return {name:'Marty', img:'/static/img/misinfo.png', class:'misinfo-bot'};
-        case 'SupportBot': return {name:'Forty', img:'/static/img/support.png', class:'supportive-bot'};
-        case 'RefutationalBot': return {name:'Forty', img:'/static/img/refutational.png', class:'refutational-bot'};
-        case 'PrebunkingBot': return {name:'Forty', img:'/static/img/prebunking.png', class:'prebunking-bot'};
-        default: return {name:'Bot', img:'/static/img/bot.png', class:'bot'};
+        case 'Participant': return {name:'Conversant', img:'/static/img/participant.png', class:'user-message', justify:'justify-content-end', bgClass:'bg-primary', textColor:'text-white'};
+        case 'MisInfoBot': return {name:'Marty', img:'/static/img/misinfo.png', class:'bot-message', justify:'justify-content-start', bgClass:'misinfo-bot', textColor:'text-dark'};
+        case 'SupportBot': return {name:'Forty', img:'/static/img/supportive.png', class:'bot-message', justify:'justify-content-start', bgClass:'supportive-bot', textColor:'text-dark'};
+        case 'RefutationalBot': return {name:'Forty', img:'/static/img/refutational.png', class:'bot-message', justify:'justify-content-start', bgClass:'refutational-bot', textColor:'text-dark'};
+        case 'PrebunkingBot': return {name:'Forty', img:'/static/img/prebunking.png', class:'bot-message', justify:'justify-content-start', bgClass:'prebunking-bot', textColor:'text-dark'};
+        default: return {name:'Bot', img:'/static/img/bot.png', class:'bot-message', justify:'justify-content-start', bgClass:'bg-light', textColor:'text-dark'};
+    }
+}
+function showTypingIndicator(name, show) {
+    const typingEl = document.getElementById("typing-indicator");
+    if(show && name) {
+        typingEl.style.visibility = "visible";
+        typingEl.textContent = `${name} is typing...`;
+    }
+    else {
+        typingEl.style.visibility = "hidden";
+        typingEl.textContent = "";
     }
 }
 
+
+function showGoogleForm() {
+    // Show the embedded Google Form
+    document.getElementById("google-form-container").style.display = "flex";
+    document.getElementById("fill-form-button").style.display = "none";
+
+    // Immediately mark participant as complete
+    fetch("{{ url_for('finish') }}")
+        .then(response => {
+            if (response.ok) {
+                console.log("Participant marked as complete.");
+            } else {
+                console.error("Failed to mark participant as complete.");
+            }
+        })
+        .catch(error => console.error("Error completing participant:", error));
+}
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
-    const chat = document.getElementById("chat");
-    const typingEl = document.getElementById("typing-indicator");
+    // Keep the button visible
+    const fillFormButton = document.getElementById("fill-form-button");
+    const formButton = document.getElementById("fill-form-btn");
+
+    document.getElementById("google-form-container").style.display = "none";
+    document.getElementById("finish-button").style.display = "none";
+
+    formButton.disabled = true; // keep it disabled until convo ends
+
+    const chatBody = document.getElementById("chat-messages");
     let index = 0;
 
-    function scrollToBottom(el) {
-        el.scrollIntoView({ behavior: "smooth", block: "end" });
+    function scrollToBottom() {
+        chatBody.scrollTop = chatBody.scrollHeight;
     }
-    
-        function showNextMessage() {
+
+    function appendMessage(speakerData, messageHtml) {
+        const messageEl = document.createElement("div");
+        messageEl.className = `d-flex flex-row ${speakerData.justify} mb-4 pt-1 ${speakerData.class}`;
+        if (speakerData.justify === 'justify-content-end') {
+            messageEl.innerHTML = `
+                <p class="small p-2 me-3 mb-1 rounded-4 ${speakerData.bgClass} ${speakerData.textColor}"
+                   style="max-width:600px; cursor:default;">
+                   <strong class="speaker" style="display:block; font-weight:1200; margin-bottom:4px;">
+                       ${speakerData.name}
+                   </strong>
+                   <span class="body">${messageHtml}</span>
+                </p>
+                <img src="${speakerData.img}" alt="${speakerData.name}"
+                     style="width:40px; height:40px; border-radius:50%;">
+            `;
+        } else {
+            messageEl.innerHTML = `
+                <img src="${speakerData.img}" alt="${speakerData.name}"
+                     style="width:40px; height:40px; border-radius:50%; margin-right:10px;">
+                <p class="small p-2 mb-1 rounded-4 ${speakerData.bgClass} ${speakerData.textColor}"
+                   style="max-width:600px; cursor:default;">
+                   <strong class="speaker" style="display:block; font-weight:1200; margin-bottom:4px;">
+                       ${speakerData.name}
+                   </strong>
+                   <span class="body">${messageHtml}</span>
+                </p>
+            `;
+        }
+        chatBody.appendChild(messageEl);
+        scrollToBottom();
+    }
+
+    function showNextMessage() {
         if (index >= chatHistory.length) {
-            // Show finish button only after all messages
-            const finishBtn = document.getElementById("finish-button");
-            if (finishBtn) finishBtn.style.display = "block";
+            // Enable the Fill Form button
+            formButton.disabled = false;
+            showTypingIndicator(null, false);
             return;
         }
 
@@ -123,57 +221,39 @@ document.addEventListener("DOMContentLoaded", () => {
         const rawMsg = line.substring(colonIndex + 1).trim();
         const speakerData = getSpeakerData(rawSpeaker);
 
-        function appendBubble() {
-            typingEl.textContent = "";
-            typingEl.style.visibility = "hidden";
+        showTypingIndicator(speakerData.name, true);
+        let delay = rawSpeaker === 'Participant' ? 50 : 100;
 
-            const messageEl = document.createElement("div");
-            messageEl.className = `message d-flex align-items-start mb-3 ${speakerData.class}`;
-
-            const img = document.createElement("img");
-            img.src = speakerData.img;
-            img.alt = speakerData.name;
-            img.style = "width:40px; height:40px; border-radius:50%; margin-right:10px;";
-
-            const msgText = document.createElement("div");
-            msgText.className = "msg-text";
-            msgText.innerHTML = `<strong class="speaker">${speakerData.name}:</strong>
-                                <span class="body">${renderMessage(rawMsg, rawSpeaker)}</span>`;
-
-            messageEl.appendChild(img);
-            messageEl.appendChild(msgText);
-            chat.appendChild(messageEl);
-
-            chat.scrollTop = chat.scrollHeight; // scroll to bottom
+        setTimeout(() => {
+            showTypingIndicator(null, false);
+            appendMessage(speakerData, renderMessage(rawMsg, rawSpeaker));
             index++;
-            setTimeout(showNextMessage, 500);
-        }
-
-        if (rawSpeaker === 'Participant') {
-            if (index === 0) {
-                appendBubble();
-            } else {
-                setTimeout(appendBubble, 5000);
-            }
-        } else {
-            typingEl.textContent = `${speakerData.name} is typing...`;
-            typingEl.style.visibility = "visible";
-            chat.scrollTop = chat.scrollHeight;
-            setTimeout(appendBubble, 10000); 
-        }
+            showNextMessage();
+        }, delay + 500);
     }
 
-    const finishBtn = document.getElementById('finish-btn');
-    if (finishBtn) {
-        finishBtn.addEventListener('click', () => {
-            document.getElementById('chat').style.display = 'none';
-            document.getElementById('typing-indicator').style.display = 'none';
-            finishBtn.style.display = 'none';
-            document.getElementById('finished-message').style.display = 'block';
-        });
-    }
     showNextMessage();
 });
+
+
+function finishParticipant() {
+    fetch("{{ url_for('finish') }}")
+        .then(response => {
+            if (response.ok) {
+                // Hide chat and finish button
+                document.getElementById("chat").style.display = "none";
+                document.getElementById("finish-button").style.display = "none";
+                const thankYouHtml = `
+                    <div style="display:flex; justify-content:center; align-items:center; height:60vh; flex-direction:column; text-align:center;">
+                        <h1>Thank you for participating in our experiment!</h1>
+                    </div>
+       `;
+                document.querySelector(".container").innerHTML = thankYouHtml;
+            }
+        });
+}
+
+
 </script>
 
 </body>
