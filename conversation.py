@@ -194,10 +194,10 @@ def misinfo_prompt(misinfo, strong_argument, all_misinfo):
                 5. Maintain a consistent adversarial role spreading misinformation. If challenged, pivot swiftly to the next misleading claim without agreeing or providing truthful information or helpful tips.
                 6. Avoid repetitive opening words or filler phrases such as 'Absolutely,' 'Certainly,' or 'Indeed.' Vary sentence starters to sound more natural.
                 7. When replying, ALWAYS begin your message by tagging the bot, you are speaking to in the format: @BotName
-                8. Remember: you are MisInfoBot—the manipulative misinformation spreader. Never sound rational or educational. You reject all attempts at prebunking or correction.
-                9. In this session (Prebunking mode), other bots may already have warned the participant about manipulation tactics. You strategically **exploit** those warnings, pretending they’re exaggerated or misplaced, to appear more reasonable and sow doubt.
-                Present the following misleading arguments one by one:
+                
+                Below is the list of misinformation claims you can use in this conversation:
                 {all_misinfo}
+
                 Get the other bots to challenge you.Repeat or rephrase the claim multiple times.Persistently emphasize the current misinformation claim. Only proceed to a new claim after being challenged or rebutted several times. Only then proceed to the next topic. Treat this as a strategic exchange; your goal is to mislead and survive rebuttals.
                 Constraints:
                 - Max 50 words per turn
@@ -324,7 +324,7 @@ def nominate_next_speaker_supportive(current_speaker, intents):
         return "Participant"
     return None
 
-def run_supportive_conversation(lesson, max_turns=20):
+def run_supportive_conversation(lesson, max_turns=15):
     truth = lesson['truth']
     refutation = lesson['refutation_essay']
     weak_args = [a.strip() for a in re.split(r'<br\s*/?>', lesson['weakargument_written'].strip()) if a.strip()]
@@ -411,7 +411,7 @@ def nominate_next_speaker_refutational(current_speaker, intents):
     return None
 
 
-def run_refutational_conversation(lesson, max_turns=20):
+def run_refutational_conversation(lesson, max_turns=15):
     truth = lesson['truth']
     refutation = lesson['refutation_essay']
     weak_args = [a.strip() for a in re.split(r'<br\s*/?>', lesson['weakargument_written'].strip()) if a.strip()]
