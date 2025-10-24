@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const speakerData = getSpeakerData(rawSpeaker);
 
         showTypingIndicator(speakerData.name, true);
-        let delay = rawSpeaker === 'Participant' ? 50 : 100;
+        let delay = rawSpeaker === 'Participant' ? 10000 : 20000;
 
         setTimeout(() => {
             showTypingIndicator(null, false);
