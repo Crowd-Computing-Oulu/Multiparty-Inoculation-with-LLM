@@ -1,82 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-
 {% include 'includes/head.html' %}
 
 <body class="d-flex flex-column min-vh-100">
+  {% include 'includes/navbar.html' %}
+  {% include 'includes/messages.html' %}
 
-    {% include 'includes/navbar.html' %}
-    {% include 'includes/messages.html' %}
+  <div class="container mt-5 text-center">
+    <h2 class="mb-4">Welcome to MindFort!</h2>
 
-    <div class="container mt-5 text-center">
+    <hr class="my-4">
 
-        <h1 class="mb-4">Welcome to MindFort!</h1>
+    <p class="text-start" style="max-width:1200px; margin: 0 auto; font-size: 1.3rem;">
+      You will be shown a simulated conversation between a <strong>conversant</strong> and <strong>two bots (Marty and Forty)</strong>.
+      <strong>Marty</strong> spreads misinformation. <strong> Your task is to pay attention to Forty, and identify which of the three possible roles it plays.</strong> <br><br>
+      Read the role explanation and example conversation below before you start.
+    </p>
 
-        <p class="lead">
-            MindFort is designed to help you recognize and counter misinformation.
-            Strengthen your critical thinking and expand your knowledge through engaging conversation.
-        </p>
+    <!-- Roles Section -->
+    <div class="container text-center py-5" style="background-color: #f9fafb; border-radius: 10px;">
+      <div class="row justify-content-center g-4">
 
-        <hr class="my-4">
-
-        <p class="text-start" style="max-width:1200px; margin: 0 auto; font-size: 1.1rem;">
-    
-            When you click the "Get Started" button below, you will enter a simulated conversation between a <strong>conversant </strong>and <strong>two bots</strong>.
-            One of them is <strong>Marty</strong>, a bot that spreads misinformation. The other is <strong>Forty</strong>, that adopts one of three possible roles below:
-            <br><br>
-            <div class="container text-center mt-1">
-                <div class="row justify-content-center shadow-sm p-2 rounded" style="background-color: #ffffff;">
-                    
-                    <div class="col-md-4 mb-4">
-                        <img src="{{ url_for('static', filename='img/support.png') }}" 
-                        
-                            alt="Supportive Bot" 
-                            class="rounded mb-3 img-fluid"
-                            style="max-width: 200px; height: auto;">
-                        <div>
-                            <strong>Supportive:</strong> Supports the conversant’s original opinion and encourages them
-                            to trust reliable information.
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 mb-4">
-                        <img src="{{ url_for('static', filename='img/refute.png') }}" 
-                            alt="Refutational Bot" 
-                            class="rounded mb-3 img-fluid"
-                            style="max-width: 200px; height: auto;">
-                        <div>
-                            <strong>Refutational:</strong> Responds to false claims by correcting them using clear facts,
-                            evidence and logical explanations.
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 mb-4">
-                        <img src="{{ url_for('static', filename='img/prebunk.png') }}" 
-                            alt="Prebunking Bot" 
-                            class="rounded mb-3 img-fluid"
-                            style="max-width: 200px; height: auto;">
-                        <div>
-                            <strong>Prebunking:</strong> Warns and educates the conversant before misinformation appears, identifies
-                            the misinformation technique used by Marty, and explains why the claim is misleading or false.
-                        </div>
-                    </div>
-
-                </div>
+        <!-- Supportive -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm role-card">
+            <img src="{{ url_for('static', filename='img/support.png') }}" class="card-img-top p-3"
+              alt="Supportive Bot" style="height:350px; object-fit: contain;">
+            <div class="card-body">
+              <h5 class="card-title">Supportive</h5>
+              <p class="card-text small">Agrees with the Conversant’s view and encourages trust in reliable information.</p>
             </div>
-
-            <br><br>
-            <strong>Your task is to follow the conversation closely. At the end, you will be asked to identify Forty's role and reflect on the conversation.</strong>
-        </p>
-
-        <div class="mt-4">
-            <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg me-3" style="margin-bottom: 30px;">Get Started</a>
+          </div>
         </div>
 
+        <!-- Refutational -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm role-card">
+            <img src="{{ url_for('static', filename='img/refute.png') }}" class="card-img-top p-3"
+              alt="Refutational Bot" style="height: 350px; object-fit: contain;">
+            <div class="card-body">
+              <h5 class="card-title">Refutational</h5>
+              <p class="card-text small">Corrects Marty's false claims using clear facts, evidence, and logical explanations.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prebunking -->
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm role-card">
+            <img src="{{ url_for('static', filename='img/prebunk.png') }}" class="card-img-top p-3"
+              alt="Prebunking Bot" style="height: 450px; object-fit: contain;">
+            <div class="card-body">
+              <h5 class="card-title">Prebunking</h5>
+              <p class="card-text small">Preemptively warns and educates the Conversant about potential misleading claims and misinformation techniques(Emotional Language, Conspiracy Narratives, etc.)</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <p class="mt-4" style="font-size: 1.1rem;">
+      When you are ready, click the button below to begin the conversation.
+      At the end, you will answer which role Forty played and reflect briefly on the conversation.
+    </p>
+
+    <div class="mt-4">
+      <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg">Get Started</a>
+    </div>
+  </div>
+
+  {% include 'includes/footer.html' %}
+  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+
+
 </body>
-
-{% include 'includes/footer.html' %}
-
-<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </html>

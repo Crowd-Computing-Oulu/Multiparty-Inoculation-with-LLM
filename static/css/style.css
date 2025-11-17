@@ -219,3 +219,21 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.role-card {
+      transition: 0.3s ease-in-out;
+    }
+
+    .role-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-title {
+      font-weight: 600;
+    }
+
+    strong {
+  font-weight: 1000;
+  size: 1rem;
+}
