@@ -19,3 +19,9 @@ env/
 *.swo
 .idea/
 .vscode/
+
+# Thesis
+thesis/
+
+# Claude Code
+CLAUDE.md
