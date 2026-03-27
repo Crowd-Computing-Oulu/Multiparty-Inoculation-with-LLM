@@ -1,17 +1,23 @@
 import os
+import io
+import csv
 import json
 import sqlite3
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, session
+from flask import Flask, render_template, redirect, url_for, request, session, jsonify, Response
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "multipartyllm"
+app.secret_key = os.environ.get("SECRET_KEY", "multipartyllm")
 
 CONV_DIR = "json/"
-CONDITIONS = ["supportive", "refutational", "prebunking"]
+CONDITIONS = ["control", "supportive", "refutational", "prebunking", "combined"]
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
+# DB_PATH: use /data/ for Railway persistent volume, local file for development
+DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(__file__), "database.db"))
 
 
 # --------------------------
@@ -38,6 +44,28 @@ def init_db():
         conn.execute("ALTER TABLE participants ADD COLUMN claim_token TEXT;")
         conn.commit()
 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            participant_id INTEGER,
+            phase TEXT,
+            item_key TEXT,
+            value TEXT,
+            created_at TEXT,
+            FOREIGN KEY (participant_id) REFERENCES participants(id)
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            participant_id INTEGER,
+            event TEXT,
+            timestamp TEXT,
+            FOREIGN KEY (participant_id) REFERENCES participants(id)
+        )
+    """)
+    conn.commit()
     conn.close()
 
 
@@ -65,6 +93,44 @@ def load_conversation_from_file(condition, index):
 
 
 # --------------------------
+# Helper: Store survey responses
+# --------------------------
+
+def log_event(participant_id, event):
+    """Log a timestamped event for a participant."""
+    if not participant_id:
+        return
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO events (participant_id, event, timestamp) VALUES (?, ?, ?)",
+        (participant_id, event, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def store_survey_responses(participant_id, phase, data):
+    """Flatten and store survey JSON data into the responses table."""
+    conn = get_db_connection()
+    now = datetime.utcnow().isoformat()
+    for key, value in data.items():
+        if isinstance(value, dict):
+            # Matrix / nested question — flatten
+            for inner_key, inner_value in value.items():
+                conn.execute(
+                    "INSERT INTO responses (participant_id, phase, item_key, value, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (participant_id, phase, inner_key, str(inner_value), now)
+                )
+        else:
+            conn.execute(
+                "INSERT INTO responses (participant_id, phase, item_key, value, created_at) VALUES (?, ?, ?, ?, ?)",
+                (participant_id, phase, key, str(value), now)
+            )
+    conn.commit()
+    conn.close()
+
+
+# --------------------------
 # Routes
 # --------------------------
 
@@ -72,12 +138,21 @@ def load_conversation_from_file(condition, index):
 def start_page():
     prolific_pid = request.args.get("PROLIFIC_PID")
     if not prolific_pid:
-        prolific_pid = f"TEST_{uuid.uuid4().hex[:8]}" #for testing 
-    
+        prolific_pid = f"TEST_{uuid.uuid4().hex[:8]}"
+
     # store it in session for later use
     session['prolific_pid'] = prolific_pid
-    
-    return render_template("index.html") 
+
+    return render_template("index.html")
+
+
+@app.route("/consent", methods=["POST"])
+def consent():
+    """Receive consent data and redirect to assign."""
+    # Consent acknowledged — just redirect
+    return redirect(url_for("assign_condition"))
+
+
 @app.route("/assign")
 def assign_condition():
     prolific_pid = session.get("prolific_pid")
@@ -97,13 +172,14 @@ def assign_condition():
             "SELECT * FROM participants WHERE prolific_pid = ?", (prolific_pid,)
         ).fetchone()
         if participant:
-            
+
             if participant['claim_token'] == claim_token:
+                session['participant_id'] = participant['id']
                 session['participant_number'] = participant['participant_number']
                 session['condition'] = participant['condition']
                 session['conversation_index'] = participant['conversation_index']
             else:
-            
+
                 conn.close()
                 return "Already assigned in another session. Please refresh.", 409
         else:
@@ -131,6 +207,11 @@ def assign_condition():
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (prolific_pid, new_number, condition, convo_index, "started", datetime.utcnow().isoformat(), claim_token))
 
+            # Get the inserted participant's id
+            row = conn.execute(
+                "SELECT id FROM participants WHERE prolific_pid = ?", (prolific_pid,)
+            ).fetchone()
+            session['participant_id'] = row['id']
             session['participant_number'] = new_number
             session['condition'] = condition
             session['conversation_index'] = convo_index
@@ -142,14 +223,36 @@ def assign_condition():
         return f"Error assigning participant: {e}", 500
 
     conn.close()
-    return redirect(url_for("conversation_entry"))
+    return redirect(url_for("pre_survey"))
 
+
+@app.route("/pre-survey")
+def pre_survey():
+    if "prolific_pid" not in session:
+        return redirect(url_for("start_page"))
+    return render_template(
+        "survey.html",
+        survey_name="preSurvey",
+        submit_url=url_for("api_survey_pre"),
+        next_url=url_for("conversation_entry"),
+    )
+
+
+@app.route("/api/survey/pre", methods=["POST"])
+def api_survey_pre():
+    if "participant_id" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+    store_survey_responses(session['participant_id'], "pre", data)
+    return jsonify({"ok": True})
 
 
 @app.route("/conversation")
 def conversation_entry():
     if "prolific_pid" not in session:
-        return redirect(url_for("home"))
+        return redirect(url_for("start_page"))
 
     condition = session['condition']
     convo_index = session['conversation_index']
@@ -169,6 +272,36 @@ def conversation_entry():
     )
 
 
+@app.route("/post-survey")
+def post_survey():
+    if "prolific_pid" not in session:
+        return redirect(url_for("start_page"))
+    return render_template(
+        "survey.html",
+        survey_name="postSurvey",
+        submit_url=url_for("api_survey_post"),
+        next_url=url_for("debrief"),
+    )
+
+
+@app.route("/api/survey/post", methods=["POST"])
+def api_survey_post():
+    if "participant_id" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+    store_survey_responses(session['participant_id'], "post", data)
+    return jsonify({"ok": True})
+
+
+@app.route("/debrief")
+def debrief():
+    if "prolific_pid" not in session:
+        return redirect(url_for("start_page"))
+    return render_template("debrief.html")
+
+
 @app.route("/finish")
 def finish():
     prolific_pid = session.get("prolific_pid")
@@ -178,19 +311,47 @@ def finish():
         conn = get_db_connection()
         conn.execute(
             "UPDATE participants SET status = ? WHERE prolific_pid = ? and participant_number = ?",
-            ("completed",prolific_pid, participant_number) 
+            ("completed", prolific_pid, participant_number)
         )
         conn.commit()
         conn.close()
 
     session['finished'] = True
-    return '', 200 
-
+    return '', 200
 
 
 # --------------------------
-# Debug: See participants
+# Admin: See participants
 # --------------------------
+
+@app.route("/api/event", methods=["POST"])
+def api_event():
+    """Log a client-side timing event."""
+    if "participant_id" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json()
+    if not data or "event" not in data:
+        return jsonify({"error": "No event"}), 400
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO events (participant_id, event, timestamp) VALUES (?, ?, ?)",
+        (session['participant_id'], data['event'], datetime.utcnow().isoformat())
+    )
+    # Store duration if provided
+    if "duration_ms" in data:
+        conn.execute(
+            "INSERT INTO events (participant_id, event, timestamp) VALUES (?, ?, ?)",
+            (session['participant_id'], f"{data['event']}_duration_ms:{data['duration_ms']}", datetime.utcnow().isoformat())
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/test")
+def test_page():
+    return render_template("test.html")
+
 
 @app.route("/admin/participants")
 def show_participants():
@@ -200,6 +361,78 @@ def show_participants():
     return {
         "participants": [dict(p) for p in participants]
     }
+
+
+# --------------------------
+# Admin: CSV export
+# --------------------------
+
+@app.route("/admin/export")
+def admin_export():
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT
+            p.id AS participant_id,
+            p.prolific_pid,
+            p.participant_number,
+            p.condition,
+            p.conversation_index,
+            p.status,
+            p.created_at AS participant_created_at,
+            r.phase,
+            r.item_key,
+            r.value,
+            r.created_at AS response_created_at
+        FROM participants p
+        LEFT JOIN responses r ON p.id = r.participant_id
+        ORDER BY p.id, r.phase, r.item_key
+    """).fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "participant_id", "prolific_pid", "participant_number", "condition",
+        "conversation_index", "status", "participant_created_at",
+        "phase", "item_key", "value", "response_created_at"
+    ])
+    for row in rows:
+        writer.writerow(list(row))
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=mindfort_export.csv"}
+    )
+
+
+@app.route("/admin/events")
+def admin_events():
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT
+            p.id AS participant_id,
+            p.prolific_pid,
+            p.condition,
+            e.event,
+            e.timestamp
+        FROM events e
+        JOIN participants p ON p.id = e.participant_id
+        ORDER BY p.id, e.timestamp
+    """).fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["participant_id", "prolific_pid", "condition", "event", "timestamp"])
+    for row in rows:
+        writer.writerow(list(row))
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=mindfort_events.csv"}
+    )
 
 
 # --------------------------
@@ -231,4 +464,4 @@ def conversation_entry_direct(condition_name, index):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=3001, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 3001)), debug=os.environ.get("FLASK_DEBUG", "true").lower() == "true")

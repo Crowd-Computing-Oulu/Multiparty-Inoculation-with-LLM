@@ -4,74 +4,48 @@
 
 <body class="d-flex flex-column min-vh-100">
   {% include 'includes/navbar.html' %}
-  {% include 'includes/messages.html' %}
 
-  <div class="container mt-5 text-center">
-    <h2 class="mb-4">Welcome to MindFort!</h2>
-
-    <hr class="my-4">
-
-    <p class="text-start" style="max-width:1200px; margin: 0 auto; font-size: 1.3rem;">
-      You will be shown a simulated conversation between a <strong>conversant</strong> and <strong>two bots (Marty and Forty)</strong>.
-      <strong>Marty</strong> spreads misinformation. <strong> Your task is to pay attention to Forty, and identify which of the three possible roles it plays.</strong> <br><br>
-      Read the role explanation and example conversation below before you start.
+  <div class="container mt-5" style="max-width: 900px;">
+    <h2 class="mb-4 text-center">Welcome to MindFort</h2>
+    <p class="text-center mb-4" style="font-size: 1.1rem;">
+      Please review the information below and provide your consent to participate.
     </p>
-
-    <!-- Roles Section -->
-    <div class="container text-center py-5" style="background-color: #f9fafb; border-radius: 10px;">
-      <div class="row justify-content-center g-4">
-
-        <!-- Supportive -->
-        <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm role-card">
-            <img src="{{ url_for('static', filename='img/support.png') }}" class="card-img-top p-3"
-              alt="Supportive Bot" style="height:350px; object-fit: contain;">
-            <div class="card-body">
-              <h5 class="card-title">Supportive</h5>
-              <p class="card-text small">Agrees with the Conversant’s view and encourages trust in reliable information.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Refutational -->
-        <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm role-card">
-            <img src="{{ url_for('static', filename='img/refute.png') }}" class="card-img-top p-3"
-              alt="Refutational Bot" style="height: 350px; object-fit: contain;">
-            <div class="card-body">
-              <h5 class="card-title">Refutational</h5>
-              <p class="card-text small">Corrects Marty's false claims using clear facts, evidence, and logical explanations.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Prebunking -->
-        <div class="col-md-4">
-          <div class="card h-100 border-0 shadow-sm role-card">
-            <img src="{{ url_for('static', filename='img/prebunk.png') }}" class="card-img-top p-3"
-              alt="Prebunking Bot" style="height: 450px; object-fit: contain;">
-            <div class="card-body">
-              <h5 class="card-title">Prebunking</h5>
-              <p class="card-text small">Preemptively warns and educates the Conversant about potential misleading claims and misinformation techniques(Emotional Language, Conspiracy Narratives, etc.)</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <p class="mt-4" style="font-size: 1.1rem;">
-      When you are ready, click the button below to begin the conversation.
-      At the end, you will answer which role Forty played and reflect briefly on the conversation.
-    </p>
-
-    <div class="mt-4">
-      <a href="{{ url_for('assign_condition') }}" class="btn btn-primary btn-lg">Get Started</a>
-    </div>
+    <div id="surveyContainer"></div>
   </div>
 
   {% include 'includes/footer.html' %}
-  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 
+  <!-- SurveyJS CDN -->
+  <link href="https://unpkg.com/survey-core@2.5.17/survey-core.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/survey-core@2.5.17/survey.core.min.js"></script>
+  <script src="https://unpkg.com/survey-js-ui@2.5.17/survey-js-ui.min.js"></script>
+  <script src="https://unpkg.com/survey-core@2.5.17/themes/flat-light-panelless.min.js"></script>
 
+  <!-- Survey definitions -->
+  <script src="{{ url_for('static', filename='surveys/survey_definitions.js') }}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const survey = new Survey.Model(window.consentSurvey);
+      survey.applyTheme(SurveyTheme.FlatLightPanelless);
+
+      survey.onComplete.add(function(sender) {
+        // POST consent data then redirect
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{{ url_for('consent') }}";
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "consent";
+        input.value = "agreed";
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+      });
+
+      const container = document.getElementById("surveyContainer");
+      survey.render(container);
+    });
+  </script>
 </body>
 </html>

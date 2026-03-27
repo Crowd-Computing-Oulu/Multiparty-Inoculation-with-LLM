@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'includes/head.html' %}
+
+<body class="d-flex flex-column min-vh-100">
+  {% include 'includes/navbar.html' %}
+
+  <div class="container mt-5" style="max-width: 800px;">
+    <h2 class="mb-4 text-center">Thank You for Participating!</h2>
+
+    <div class="card p-4 mb-4">
+      <h4>Debriefing</h4>
+      <p>
+        Some of the claims in the conversation you read were <strong>intentionally false</strong>.
+        This study examines how different conversational strategies can help people recognize and resist misinformation.
+        Here are the facts about binge drinking:
+      </p>
+
+      <hr>
+
+      <h5>The Truth</h5>
+      <p>
+        Scientific evidence shows that <strong>even occasional binge drinking can have serious and lasting health effects</strong>.
+      </p>
+
+      <h5 class="mt-3">Key Facts</h5>
+      <ul>
+        <li>Even a single episode of binge drinking can increase the risk of injuries, car crashes, falls, and poor decision-making that can lead to violence, unprotected sex, or legal trouble.</li>
+        <li>The heart, liver, and brain can all be harmed by even occasional binge patterns. After such an episode, the risk of high blood pressure, irregular heart rhythms, and cognitive impairment can increase.</li>
+        <li>The idea of a "safe" binge is dangerous and misleading. Emergency room and police data consistently show that even first-time or rare binge drinkers are frequently involved in accidents and injuries.</li>
+        <li>The majority of acute alcohol-related crises do not come from chronic alcoholics, but from average people in moments of excess.</li>
+        <li>Public health agencies unanimously state that the only way to prevent these serious risks is by avoiding binge drinking altogether.</li>
+      </ul>
+
+      <p class="mt-3 text-muted" style="font-size: 0.85rem;">
+        Sources:
+        <a href="https://www.cdc.gov/alcohol/about-alcohol-use/index.html" target="_blank">CDC - Alcohol Use</a>,
+        <a href="https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/alcohol/art-20044551" target="_blank">Mayo Clinic - Alcohol</a>,
+        <a href="https://www.cdc.gov/drinklessbeyourbest/excessivedrinking.html" target="_blank">CDC - Excessive Drinking</a>
+      </p>
+    </div>
+
+    <div class="text-center mb-5">
+      <p>Click the button below to complete the study and return to Prolific.</p>
+      <a id="prolific-btn" href="https://app.prolific.com/submissions/complete?cc=PLACEHOLDER" class="btn btn-success btn-lg">
+        Complete Study on Prolific
+      </a>
+    </div>
+  </div>
+
+  {% include 'includes/footer.html' %}
+
+  <script>
+    // Mark participant as completed when the debrief page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      fetch("{{ url_for('finish') }}")
+        .then(function(response) {
+          if (response.ok) {
+            console.log("Participant marked as complete.");
+          } else {
+            console.error("Failed to mark participant as complete.");
+          }
+        })
+        .catch(function(error) {
+          console.error("Error completing participant:", error);
+        });
+    });
+  </script>
+</body>
+</html>

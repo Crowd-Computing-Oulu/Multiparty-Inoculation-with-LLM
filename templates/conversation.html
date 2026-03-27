@@ -8,29 +8,25 @@
 
         <div class="text-center"><h1>Conversation</h1></div>
 
-        <div class="alert alert-info" style="font-size: 1rem; padding: 0.3rem 0.6rem;">
-            <p>This conversation is between two bots (Marty and Forty) and Conversant discussing the topic: "Binge drinking"</strong>.</p>
-
-            <p>Please read the conversation carefully and analyze it.</p>
-            <ol>
-                <li class="mb-1">When the conversation ends, <strong>“Fill the form”</strong> button will be enabled.</li>
-                <li class="mb-1">Click the <strong>“Fill the form”</strong> button to open the Google Form and submit your analysis.</li>
-                <li class="mb-1"> After submitting the Google Form, you will receive a <strong>completion code</strong>.</li>
-                <li class="mb-1">Enter the completion code on Prolific to complete the task. </li>
-            </ol>
+        <div class="alert alert-info" style="font-size: 1rem; padding: 0.5rem 0.8rem;">
+            <p>You are about to witness a group chat about <strong>binge drinking</strong>. The participants are chatbots with different perspectives on the topic.</p>
+            <p>Please read the conversation carefully from start to finish. When all messages have been displayed, you will be able to continue to a short survey.</p>
         </div>
-        <!-- Fill Form button (shown after chat ends) -->
-            <div id="fill-form-button" style="text-align:center; margin:20px;">
-                <button id="fill-form-btn" class="btn btn-primary" onclick="showGoogleForm()" disabled>
-                    Fill the Form
-                </button>
-            </div>
 
-       <div style="display: flex; gap: 20px; max-width: 1200px; margin: auto; margin-bottom: 30px; height: 75vh; min-height: 600px;">
-            
+        <!-- Scroll prompt (shown after all messages, before user scrolls to bottom) -->
+        <div id="scroll-prompt" style="text-align:center; margin:20px; display:none;">
+            <p class="text-muted">Please scroll down to read the entire conversation.</p>
+        </div>
+
+        <!-- Continue button (shown only after user has scrolled to bottom) -->
+        <div id="continue-button" style="text-align:center; margin:20px; display:none;">
+            <a href="{{ url_for('post_survey') }}" class="btn btn-primary btn-lg">Continue to Survey</a>
+        </div>
+
+       <div id="chat-wrapper" style="display: flex; gap: 20px; max-width: 1200px; margin: auto; margin-bottom: 30px;">
 
             <!-- Chat container -->
-            <div class="card" id="chat" style="flex: 1; display: flex; flex-direction: column;  min-height:600px;">
+            <div class="card" id="chat" style="flex: 1; display: flex; flex-direction: column;">
 
                 <div class="card-header d-flex flex-column p-1 justify-content-between">
                     <div class="d-flex w-100 align-items-center justify-content-between">
@@ -42,53 +38,34 @@
                 <div class="card-body overflow-y-scroll flex-grow-1" id="chat-messages" style="padding: 1rem; background:#fafafa; min-height:0;">
                 </div>
 
-                <div class="card-footer d-flex p-1" style="gap:0.6rem;">
-                    <input type="text" id="msgInput" class="form-control no-interact" placeholder="" autocomplete="off" />
-                    <button id="sendButton" class="btn btn-primary no-interact" type="button">
-                        <img src="/static/img/paperplane.fill.png" width="24" alt="Send" style="margin-bottom: 2px;">
-                    </button>
-                </div>
             </div>
 
-            <!-- Google Form container -->
-            <div id="google-form-container" style="flex: 1; display: none; flex-direction: column; border: 1px solid #ddd; border-radius:4px; min-height:0;">
-                <div class="card-header p-2" style="flex:0 0 auto;">
-                    <h3 class="mb-0">Please fill out the form below:</h3>
-                </div>
-                <div class="card-body flex-grow-1" style="overflow:hidden; display:flex; flex-direction:column; min-height:0;">
-                    <iframe id="google-form"
-                        src="https://docs.google.com/forms/d/e/1FAIpQLScefwvGMj5rAerAB-mho8mA7hQHxsOKkqzEVlCUSWSL1bstdg/viewform?usp=pp_url&entry.1054632790={{ participant_number }}&embedded=true"
-                        style="flex:1; width:100%; border:none; min-height:0;">
-                    </iframe>
-                </div>
-            </div>
-
-
         </div>
-
-
-        
-
-
-        <!-- Finish button (shown after form is visible) -->
-        <div id="finish-button" style="display:none; text-align:center; margin:20px;">
-            <button class="btn btn-success" onclick="finishParticipant()">Finish</button>
-        </div>
-
-        
 
 </div>
 
 {% include 'includes/footer.html' %}
 
 <script>
+// Size chat to fill available viewport
+function sizeChatWrapper() {
+    const wrapper = document.getElementById('chat-wrapper');
+    const rect = wrapper.getBoundingClientRect();
+    const available = window.innerHeight - rect.top - 20;
+    wrapper.style.height = Math.max(400, available) + 'px';
+}
+sizeChatWrapper();
+window.addEventListener('resize', sizeChatWrapper);
+
 const chatHistory = {{ history|tojson | safe }};
+const currentMode = "{{ mode }}";
+
 const mentionMap = {
-    "Participant": "Conversant",
+    "Participant": "Alex",
     "MisInfoBot": "Marty",
-    "SupportBot": "Forty",
-    "RefutationalBot": "Forty",
-    "PrebunkingBot": "Forty"
+    "SupportBot": "Quinn",
+    "RefutationalBot": "Sage",
+    "PrebunkingBot": "River"
 };
 
 function escapeHTML(str) {
@@ -118,14 +95,15 @@ function renderMessage(text,speaker) {
 
 function getSpeakerData(speaker) {
     switch(speaker) {
-        case 'Participant': return {name:'Conversant', img:'/static/img/participant.png', class:'user-message', justify:'justify-content-end', bgClass:'bg-primary', textColor:'text-white'};
+        case 'Participant': return {name:'Alex', img:'/static/img/participant.png', class:'user-message', justify:'justify-content-end', bgClass:'bg-primary', textColor:'text-white'};
         case 'MisInfoBot': return {name:'Marty', img:'/static/img/misinfo.png', class:'bot-message', justify:'justify-content-start', bgClass:'misinfo-bot', textColor:'text-dark'};
-        case 'SupportBot': return {name:'Forty', img:'/static/img/supportive.png', class:'bot-message', justify:'justify-content-start', bgClass:'supportive-bot', textColor:'text-dark'};
-        case 'RefutationalBot': return {name:'Forty', img:'/static/img/refutational.png', class:'bot-message', justify:'justify-content-start', bgClass:'refutational-bot', textColor:'text-dark'};
-        case 'PrebunkingBot': return {name:'Forty', img:'/static/img/prebunking.png', class:'bot-message', justify:'justify-content-start', bgClass:'prebunking-bot', textColor:'text-dark'};
+        case 'SupportBot': return {name:'Quinn', img:'/static/img/supportive.png', class:'bot-message', justify:'justify-content-start', bgClass:'supportive-bot', textColor:'text-dark'};
+        case 'RefutationalBot': return {name:'Sage', img:'/static/img/refutational.png', class:'bot-message', justify:'justify-content-start', bgClass:'refutational-bot', textColor:'text-dark'};
+        case 'PrebunkingBot': return {name:'River', img:'/static/img/prebunking.png', class:'bot-message', justify:'justify-content-start', bgClass:'prebunking-bot', textColor:'text-dark'};
         default: return {name:'Bot', img:'/static/img/bot.png', class:'bot-message', justify:'justify-content-start', bgClass:'bg-light', textColor:'text-dark'};
     }
 }
+
 function showTypingIndicator(name, show) {
     const typingEl = document.getElementById("typing-indicator");
     if(show && name) {
@@ -139,35 +117,7 @@ function showTypingIndicator(name, show) {
 }
 
 
-function showGoogleForm() {
-    // Show the embedded Google Form
-    document.getElementById("google-form-container").style.display = "flex";
-    document.getElementById("fill-form-button").style.display = "none";
-
-    // Immediately mark participant as complete
-    fetch("{{ url_for('finish') }}")
-        .then(response => {
-            if (response.ok) {
-                console.log("Participant marked as complete.");
-            } else {
-                console.error("Failed to mark participant as complete.");
-            }
-        })
-        .catch(error => console.error("Error completing participant:", error));
-}
-
-
-
 document.addEventListener("DOMContentLoaded", () => {
-    // Keep the button visible
-    const fillFormButton = document.getElementById("fill-form-button");
-    const formButton = document.getElementById("fill-form-btn");
-
-    document.getElementById("google-form-container").style.display = "none";
-    document.getElementById("finish-button").style.display = "none";
-
-    formButton.disabled = true; // keep it disabled until convo ends
-
     const chatBody = document.getElementById("chat-messages");
     let index = 0;
 
@@ -207,11 +157,32 @@ document.addEventListener("DOMContentLoaded", () => {
         scrollToBottom();
     }
 
+    let allMessagesShown = false;
+
+    function checkScrolledToBottom() {
+        const threshold = 50; // px from bottom counts as "at bottom"
+        return chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight < threshold;
+    }
+
+    function enableContinueIfScrolled() {
+        if (allMessagesShown && checkScrolledToBottom()) {
+            document.getElementById("scroll-prompt").style.display = "none";
+            document.getElementById("continue-button").style.display = "block";
+        }
+    }
+
+    chatBody.addEventListener("scroll", enableContinueIfScrolled);
+
     function showNextMessage() {
         if (index >= chatHistory.length) {
-            // Enable the Fill Form button
-            formButton.disabled = false;
+            allMessagesShown = true;
             showTypingIndicator(null, false);
+            // Check if already at bottom (short conversations)
+            if (checkScrolledToBottom()) {
+                document.getElementById("continue-button").style.display = "block";
+            } else {
+                document.getElementById("scroll-prompt").style.display = "block";
+            }
             return;
         }
 
@@ -224,16 +195,15 @@ document.addEventListener("DOMContentLoaded", () => {
         showTypingIndicator(speakerData.name, true);
         let delay;
 
-            if (index === 0 && rawSpeaker === 'Participant') {
-                delay = 3000; 
-                    } 
-                    else if (rawSpeaker === 'Participant') {
-                        delay = 10000; 
-                    } 
-                    else {
-                        delay = 20000;
-                    }
-
+        if (index === 0 && rawSpeaker === 'Participant') {
+            delay = 2000;
+        }
+        else if (rawSpeaker === 'Participant') {
+            delay = 5000;
+        }
+        else {
+            delay = 8000;
+        }
 
         setTimeout(() => {
             showTypingIndicator(null, false);
@@ -245,24 +215,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     showNextMessage();
 });
-
-
-function finishParticipant() {
-    fetch("{{ url_for('finish') }}")
-        .then(response => {
-            if (response.ok) {
-                // Hide chat and finish button
-                document.getElementById("chat").style.display = "none";
-                document.getElementById("finish-button").style.display = "none";
-                const thankYouHtml = `
-                    <div style="display:flex; justify-content:center; align-items:center; height:60vh; flex-direction:column; text-align:center;">
-                        <h1>Thank you for participating in our experiment!</h1>
-                    </div>
-       `;
-                document.querySelector(".container").innerHTML = thankYouHtml;
-            }
-        });
-}
 
 
 </script>

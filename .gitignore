@@ -23,5 +23,11 @@ env/
 # Thesis
 thesis/
 
+# Environment variables
+.env
+
 # Claude Code
 CLAUDE.md
+
+# Docs / brainstorming
+docs/

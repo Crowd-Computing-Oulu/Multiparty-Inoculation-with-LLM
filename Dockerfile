@@ -14,10 +14,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all app files
 COPY . /app
 
-# Expose port 5000 for Flask
-EXPOSE 5000
+# Create data directory for persistent volume
+RUN mkdir -p /data
 
-# Run the app with Flask’s built-in server
-CMD ["python", "app.py"]
+# Railway injects PORT env var
+ENV PORT=3001
+
+# Run with gunicorn for production
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
 
 

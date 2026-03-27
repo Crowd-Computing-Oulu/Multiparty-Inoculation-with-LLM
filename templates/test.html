@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'includes/head.html' %}
+
+<body class="d-flex flex-column min-vh-100">
+  {% include 'includes/navbar.html' %}
+
+  <div class="container mt-5" style="max-width: 900px;">
+    <h2 class="mb-3">Test Page — Conversation Conditions</h2>
+    <p class="text-muted mb-4">Direct links to all conversation conditions and variants. No consent or surveys — goes straight to the chat.</p>
+
+    <div class="card mb-4 p-3">
+      <h5>Study Flow (full)</h5>
+      <p class="mb-2">This is what a real participant sees: consent → demographics → MIST-8 → claim agreement → conversation → post-survey → debrief.</p>
+      <a href="/" class="btn btn-primary">Start Full Flow</a>
+    </div>
+
+    <hr>
+
+    <h4 class="mt-4 mb-3">Conversations by Condition</h4>
+
+    <!-- Control -->
+    <div class="card mb-3 p-3" style="border-left: 4px solid #dc3545;">
+      <h5>1. Control <span class="badge bg-danger">No defense</span></h5>
+      <p class="mb-2">MisInfoBot (Marty) spreads misinformation unchallenged. A naive participant asks follow-up questions but never pushes back. <strong>No Forty.</strong></p>
+      <div class="d-flex gap-2">
+        <a href="/conversation/control/1" class="btn btn-outline-secondary btn-sm">Variant 1</a>
+        <a href="/conversation/control/2" class="btn btn-outline-secondary btn-sm">Variant 2</a>
+        <a href="/conversation/control/3" class="btn btn-outline-secondary btn-sm">Variant 3</a>
+      </div>
+      <small class="text-muted mt-1">New vignettes — same MisInfoBot prompts as thesis</small>
+    </div>
+
+    <!-- Supportive -->
+    <div class="card mb-3 p-3" style="border-left: 4px solid #DAE8FC;">
+      <h5>2. Supportive <span class="badge" style="background-color: #DAE8FC; color: #333;">Single bot</span></h5>
+      <p class="mb-2">MisInfoBot (Marty) vs Forty using the <strong>supportive</strong> strategy — warm, affirming, gently corrects with encouragement. No sources/links.</p>
+      <div class="d-flex gap-2">
+        <a href="/conversation/supportive/1" class="btn btn-outline-secondary btn-sm">Variant 1</a>
+        <a href="/conversation/supportive/2" class="btn btn-outline-secondary btn-sm">Variant 2</a>
+        <a href="/conversation/supportive/3" class="btn btn-outline-secondary btn-sm">Variant 3</a>
+      </div>
+      <small class="text-muted mt-1">From thesis validation study (validated, 80.6% identification accuracy)</small>
+    </div>
+
+    <!-- Refutational -->
+    <div class="card mb-3 p-3" style="border-left: 4px solid #D5E8D4;">
+      <h5>3. Refutational <span class="badge" style="background-color: #D5E8D4; color: #333;">Single bot</span></h5>
+      <p class="mb-2">MisInfoBot (Marty) vs Forty using the <strong>refutational</strong> strategy — direct, fact-based debunking with evidence and source links.</p>
+      <div class="d-flex gap-2">
+        <a href="/conversation/refutational/1" class="btn btn-outline-secondary btn-sm">Variant 1</a>
+        <a href="/conversation/refutational/2" class="btn btn-outline-secondary btn-sm">Variant 2</a>
+        <a href="/conversation/refutational/3" class="btn btn-outline-secondary btn-sm">Variant 3</a>
+      </div>
+      <small class="text-muted mt-1">From thesis validation study</small>
+    </div>
+
+    <!-- Prebunking -->
+    <div class="card mb-3 p-3" style="border-left: 4px solid #E1D5E7;">
+      <h5>4. Prebunking <span class="badge" style="background-color: #E1D5E7; color: #333;">Single bot</span></h5>
+      <p class="mb-2">MisInfoBot (Marty) vs Forty using the <strong>prebunking</strong> strategy — names manipulation tactics, warns about misinformation techniques, then corrects.</p>
+      <div class="d-flex gap-2">
+        <a href="/conversation/prebunking/1" class="btn btn-outline-secondary btn-sm">Variant 1</a>
+        <a href="/conversation/prebunking/2" class="btn btn-outline-secondary btn-sm">Variant 2</a>
+        <a href="/conversation/prebunking/3" class="btn btn-outline-secondary btn-sm">Variant 3</a>
+      </div>
+      <small class="text-muted mt-1">From thesis validation study</small>
+    </div>
+
+    <!-- Combined -->
+    <div class="card mb-3 p-3" style="border-left: 4px solid #4572C4;">
+      <h5>5. Combined <span class="badge bg-primary">All 3 bots</span></h5>
+      <p class="mb-2">MisInfoBot (Marty) vs <strong>all three defense bots taking turns</strong> as Forty — Supportive responds to claim 1, Refutational to claim 2, Prebunking to claim 3, then cycles. This is the novel condition.</p>
+      <div class="d-flex gap-2">
+        <a href="/conversation/combined/1" class="btn btn-outline-secondary btn-sm">Variant 1</a>
+        <a href="/conversation/combined/2" class="btn btn-outline-secondary btn-sm">Variant 2</a>
+        <a href="/conversation/combined/3" class="btn btn-outline-secondary btn-sm">Variant 3</a>
+      </div>
+      <small class="text-muted mt-1">New vignettes — same prompts as thesis, rotation among all 3 defense strategies</small>
+    </div>
+
+    <hr>
+
+    <div class="card mb-4 p-3" style="background-color: #f8f9fa;">
+      <h5>Other Pages</h5>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/debrief" class="btn btn-outline-secondary btn-sm">Debrief</a>
+        <a href="/admin/participants" class="btn btn-outline-secondary btn-sm">Admin: Participants</a>
+        <a href="/admin/export" class="btn btn-outline-secondary btn-sm">Admin: CSV Export</a>
+      </div>
+    </div>
+
+  </div>
+
+  {% include 'includes/footer.html' %}
+</body>
+</html>
